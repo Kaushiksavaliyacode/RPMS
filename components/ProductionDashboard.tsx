@@ -136,7 +136,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
             <input
               type="text"
               placeholder="Search Job No..."
-              className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
+              className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
             />
           </div>
         </div>
@@ -147,8 +147,8 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
               onClick={() => handleJobSelect(job.id)}
               className={`p-4 rounded-xl cursor-pointer border transition-all duration-200 ${
                 selectedJobId === job.id
-                  ? 'bg-white border-blue-500 shadow-md ring-1 ring-blue-500 relative z-10'
-                  : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-sm'
+                  ? 'bg-white border-emerald-500 shadow-md ring-1 ring-emerald-500 relative z-10'
+                  : 'bg-white border-slate-100 hover:border-emerald-300 hover:shadow-sm'
               }`}
             >
               <div className="flex justify-between items-center mb-2">
@@ -173,49 +173,49 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
         {selectedJob ? (
           <>
             {/* LIGHT STATUS BAR HEADER (Sticky) */}
-             <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-30 shadow-sm shrink-0">
+             <div className="bg-emerald-50/50 border-b border-emerald-100 p-4 sticky top-0 z-30 shadow-sm shrink-0">
                 <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                     
                     <div className="flex items-center gap-4 w-full xl:w-auto">
-                        <button onClick={() => setMobileView('list')} className="lg:hidden p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors text-slate-600">
+                        <button onClick={() => setMobileView('list')} className="lg:hidden p-2 bg-white hover:bg-slate-50 rounded-full transition-colors text-slate-600 shadow-sm">
                             <ArrowLeft size={20} />
                         </button>
                         <div>
                             <div className="flex items-baseline gap-2">
-                                <h1 className="text-2xl font-black tracking-tight text-slate-800">#{selectedJob.srNo}</h1>
-                                <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-sm font-bold font-mono border border-blue-100">{selectedJob.jobCode}</span>
+                                <h1 className="text-2xl font-black tracking-tight text-emerald-950">#{selectedJob.srNo}</h1>
+                                <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-sm font-bold font-mono border border-emerald-200">{selectedJob.jobCode}</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Job Specs Stats */}
-                    <div className="flex flex-wrap items-center gap-4 sm:gap-8 w-full xl:w-auto bg-slate-50 xl:bg-transparent p-3 xl:p-0 rounded-lg border border-slate-100 xl:border-0">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-8 w-full xl:w-auto bg-white xl:bg-transparent p-3 xl:p-0 rounded-lg border border-emerald-100 xl:border-0">
                          <div className="flex flex-col">
-                             <span className="uppercase text-[10px] font-bold text-slate-400 tracking-wider">Width</span>
-                             <span className="text-slate-800 font-bold text-sm">{selectedJob.size}<span className="text-xs font-normal text-slate-500 ml-0.5">mm</span></span>
+                             <span className="uppercase text-[10px] font-bold text-emerald-400 tracking-wider">Width</span>
+                             <span className="text-emerald-900 font-bold text-sm">{selectedJob.size}<span className="text-xs font-normal text-emerald-600 ml-0.5">mm</span></span>
                          </div>
-                         <div className="w-px h-6 bg-slate-200"></div>
+                         <div className="w-px h-6 bg-emerald-200"></div>
                          <div className="flex flex-col">
-                             <span className="uppercase text-[10px] font-bold text-slate-400 tracking-wider">Micron</span>
-                             <span className="text-slate-800 font-bold text-sm">{selectedJob.micron}<span className="text-xs font-normal text-slate-500 ml-0.5">µ</span></span>
+                             <span className="uppercase text-[10px] font-bold text-emerald-400 tracking-wider">Micron</span>
+                             <span className="text-emerald-900 font-bold text-sm">{selectedJob.micron}<span className="text-xs font-normal text-emerald-600 ml-0.5">µ</span></span>
                          </div>
-                         <div className="w-px h-6 bg-slate-200"></div>
+                         <div className="w-px h-6 bg-emerald-200"></div>
                          <div className="flex flex-col">
-                             <span className="uppercase text-[10px] font-bold text-slate-400 tracking-wider">Target</span>
-                             <span className="text-slate-800 font-bold text-sm">{selectedJob.totalQuantity}<span className="text-xs font-normal text-slate-500 ml-0.5">kg</span></span>
+                             <span className="uppercase text-[10px] font-bold text-emerald-400 tracking-wider">Target</span>
+                             <span className="text-emerald-900 font-bold text-sm">{selectedJob.totalQuantity}<span className="text-xs font-normal text-emerald-600 ml-0.5">kg</span></span>
                          </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-4 w-full xl:w-auto border-t xl:border-t-0 pt-4 xl:pt-0 border-slate-100">
+                    <div className="flex items-center gap-4 w-full xl:w-auto border-t border-emerald-100 xl:border-t-0 pt-4 xl:pt-0">
                         {/* Completion Toggle */}
                         <div className="flex items-center gap-3 mr-4">
-                            <span className={`text-xs font-bold uppercase tracking-wide ${isProdComplete ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            <span className={`text-xs font-bold uppercase tracking-wide ${isProdComplete ? 'text-emerald-700' : 'text-slate-400'}`}>
                                 {isProdComplete ? 'Prod Complete' : 'Mark Complete'}
                             </span>
                             <button 
                                 onClick={() => toggleCompletion(isProdComplete)}
-                                className={`w-12 h-6 rounded-full transition-colors duration-300 relative flex items-center ${isProdComplete ? 'bg-emerald-500' : 'bg-slate-200'}`}
+                                className={`w-12 h-6 rounded-full transition-colors duration-300 relative flex items-center ${isProdComplete ? 'bg-emerald-600' : 'bg-slate-200'}`}
                             >
                                 <div className={`w-5 h-5 bg-white rounded-full shadow-md absolute transition-transform duration-300 ${isProdComplete ? 'translate-x-6' : 'translate-x-1'}`}></div>
                             </button>
@@ -223,7 +223,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
 
                         <button 
                             onClick={handleSave} 
-                            className="flex-1 xl:flex-none bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm uppercase tracking-wide"
+                            className="flex-1 xl:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm uppercase tracking-wide"
                         >
                             <Save size={16} />
                             <span>Save Data</span>
@@ -236,14 +236,14 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
             <div className="flex-1 overflow-auto bg-slate-50 relative">
                 <div className="min-w-[800px]">
                     {/* Grid Header */}
-                    <div className="grid grid-cols-12 gap-px sticky top-0 z-10 text-xs uppercase font-bold text-slate-500 bg-slate-100 border-b border-slate-200 shadow-sm">
-                        <div className="col-span-1 p-3 text-center">#</div>
-                        <div className="col-span-3 p-3 bg-white text-center">Gross Weight</div>
-                        <div className="col-span-2 p-3 bg-white text-center">Core Weight</div>
-                        <div className="col-span-2 p-3 bg-blue-50 text-blue-700 text-center border-l border-blue-100">Net Weight</div>
-                        <div className="col-span-2 p-3 bg-white text-center">Meter</div>
-                        <div className="col-span-1 p-3 bg-white text-center">Joints</div>
-                        <div className="col-span-1 p-3 text-center">Action</div>
+                    <div className="grid grid-cols-12 gap-px sticky top-0 z-10 text-xs uppercase font-bold text-white bg-emerald-600 border-b border-emerald-700 shadow-sm">
+                        <div className="col-span-1 p-3 text-center bg-emerald-700">#</div>
+                        <div className="col-span-3 p-3 text-center">Gross Weight</div>
+                        <div className="col-span-2 p-3 text-center">Core Weight</div>
+                        <div className="col-span-2 p-3 text-center bg-emerald-800/50">Net Weight</div>
+                        <div className="col-span-2 p-3 text-center">Meter</div>
+                        <div className="col-span-1 p-3 text-center">Joints</div>
+                        <div className="col-span-1 p-3 text-center bg-emerald-700">Action</div>
                     </div>
 
                     {/* Grid Rows */}
@@ -252,10 +252,10 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                              const gross = parseFloat(row.grossWeight) || 0;
                              const core = parseFloat(row.coreWeight) || 0;
                              const net = gross - core;
-                             const netClass = net > 0 ? 'text-blue-600 font-bold' : 'text-slate-300';
+                             const netClass = net > 0 ? 'text-emerald-700 font-bold' : 'text-slate-300';
 
                              return (
-                                <div key={row.id} className="grid grid-cols-12 gap-px bg-white hover:bg-blue-50/30 transition-colors group">
+                                <div key={row.id} className="grid grid-cols-12 gap-px bg-white hover:bg-emerald-50/30 transition-colors group">
                                     <div className="col-span-1 p-2 text-center text-slate-400 text-xs flex items-center justify-center bg-slate-50">
                                         {index + 1}
                                     </div>
@@ -264,7 +264,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                                             type="number" step="0.001"
                                             value={row.grossWeight}
                                             onChange={(e) => handleCellChange(row.id, 'grossWeight', e.target.value)}
-                                            className="w-full h-full p-2.5 outline-none text-sm font-semibold text-slate-800 bg-transparent focus:bg-blue-50/50 text-center placeholder-slate-300"
+                                            className="w-full h-full p-2.5 outline-none text-sm font-semibold text-slate-800 bg-transparent focus:bg-emerald-50/50 text-center placeholder-slate-300"
                                             placeholder="0.000"
                                         />
                                     </div>
@@ -273,11 +273,11 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                                             type="number" step="0.001"
                                             value={row.coreWeight}
                                             onChange={(e) => handleCellChange(row.id, 'coreWeight', e.target.value)}
-                                            className="w-full h-full p-2.5 outline-none text-sm font-semibold text-slate-800 bg-transparent focus:bg-blue-50/50 text-center placeholder-slate-300"
+                                            className="w-full h-full p-2.5 outline-none text-sm font-semibold text-slate-800 bg-transparent focus:bg-emerald-50/50 text-center placeholder-slate-300"
                                             placeholder="0.000"
                                         />
                                     </div>
-                                    <div className={`col-span-2 bg-blue-50/10 flex items-center justify-center text-sm font-mono ${netClass}`}>
+                                    <div className={`col-span-2 bg-emerald-50/10 flex items-center justify-center text-sm font-mono ${netClass}`}>
                                         {net > 0 ? net.toFixed(3) : '-'}
                                     </div>
                                     <div className="col-span-2">
@@ -285,7 +285,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                                             type="number"
                                             value={row.meter}
                                             onChange={(e) => handleCellChange(row.id, 'meter', e.target.value)}
-                                            className="w-full h-full p-2.5 outline-none text-sm font-semibold text-slate-800 bg-transparent focus:bg-blue-50/50 text-center placeholder-slate-300"
+                                            className="w-full h-full p-2.5 outline-none text-sm font-semibold text-slate-800 bg-transparent focus:bg-emerald-50/50 text-center placeholder-slate-300"
                                             placeholder="0"
                                         />
                                     </div>
@@ -294,7 +294,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                                             type="number"
                                             value={row.joints}
                                             onChange={(e) => handleCellChange(row.id, 'joints', e.target.value)}
-                                            className="w-full h-full p-2.5 outline-none text-sm font-semibold text-slate-800 bg-transparent focus:bg-blue-50/50 text-center placeholder-slate-300"
+                                            className="w-full h-full p-2.5 outline-none text-sm font-semibold text-slate-800 bg-transparent focus:bg-emerald-50/50 text-center placeholder-slate-300"
                                             placeholder="-"
                                         />
                                     </div>
@@ -312,7 +312,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                     
                     {/* Add Row Button */}
                     <div className="p-6 bg-white">
-                         <button onClick={addMoreRows} className="w-full border-2 border-dashed border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 py-3 rounded-xl transition-all flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-wide">
+                         <button onClick={addMoreRows} className="w-full border-2 border-dashed border-emerald-100 text-emerald-400 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 py-3 rounded-xl transition-all flex items-center justify-center gap-2 font-bold text-sm uppercase tracking-wide">
                              <Plus size={16} /> Add 5 More Lines
                          </button>
                     </div>
@@ -322,7 +322,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
             {/* Footer Summary */}
             <div className="bg-white border-t border-slate-200 p-3 flex flex-wrap gap-4 justify-end items-center text-sm font-medium text-slate-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
                  <div className="px-3 py-1">Total Rows: <span className="text-slate-900 font-bold">{selectedJob.productionData.length}</span></div>
-                 <div className="bg-blue-50 px-4 py-2 rounded-lg text-blue-700 border border-blue-100 shadow-sm">
+                 <div className="bg-emerald-50 px-4 py-2 rounded-lg text-emerald-700 border border-emerald-100 shadow-sm">
                      Total Net Wt: <span className="font-black text-xl ml-2">{selectedJob.productionData.reduce((a,c) => a + c.netWeight, 0).toFixed(3)} <span className="text-xs font-normal">kg</span></span>
                  </div>
             </div>
@@ -331,8 +331,8 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
         ) : (
           <div className="flex items-center justify-center h-full text-slate-400 bg-slate-50">
             <div className="text-center">
-                <div className="bg-white p-6 rounded-full shadow-sm inline-block mb-4">
-                     <Activity size={48} className="text-blue-200" />
+                <div className="bg-white p-6 rounded-full shadow-sm inline-block mb-4 border border-emerald-50">
+                     <Activity size={48} className="text-emerald-200" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-700">No Job Selected</h3>
                 <p className="text-sm text-slate-400 mt-1">Select a job from the sidebar to start production.</p>

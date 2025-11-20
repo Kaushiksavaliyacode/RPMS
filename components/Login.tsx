@@ -25,8 +25,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4 relative overflow-hidden">
       {/* Background decorations */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
+      <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
 
       <div className="bg-white/95 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/20 relative z-10">
         <div className="text-center mb-8">
@@ -57,7 +57,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             onClick={() => setRole('PRODUCTION')}
             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
               role === 'PRODUCTION'
-                ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg scale-105'
+                ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg scale-105'
                 : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300 hover:bg-slate-50'
             }`}
           >
@@ -69,7 +69,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             onClick={() => setRole('SLITTING')}
             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
               role === 'SLITTING'
-                ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg scale-105'
+                ? 'bg-blue-600 border-blue-600 text-white shadow-lg scale-105'
                 : 'bg-white border-slate-100 text-slate-400 hover:border-slate-300 hover:bg-slate-50'
             }`}
           >
@@ -120,8 +120,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             type="submit"
             className={`w-full py-3.5 rounded-xl text-white font-bold shadow-lg transition-all duration-200 transform hover:-translate-y-0.5 ${
                 role === 'ADMIN' ? 'bg-slate-900 hover:bg-slate-800 shadow-slate-900/20' :
-                role === 'PRODUCTION' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20' :
-                'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                role === 'PRODUCTION' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
+                'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'
             }`}
           >
             Login to System

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, JobCard } from './types';
 import { subscribeToJobs, addJobToFirebase, updateJobInFirebase, deleteJobFromFirebase } from './services/storage';
@@ -77,8 +76,8 @@ const App: React.FC = () => {
   const getHeaderColor = () => {
     switch(user.role) {
         case 'ADMIN': return 'bg-slate-900 border-slate-800';
-        case 'PRODUCTION': return 'bg-indigo-600 border-indigo-500';
-        case 'SLITTING': return 'bg-emerald-600 border-emerald-500';
+        case 'PRODUCTION': return 'bg-emerald-600 border-emerald-500'; // Green for Production
+        case 'SLITTING': return 'bg-blue-600 border-blue-500'; // Blue for Slitting
         default: return 'bg-slate-900';
     }
   };

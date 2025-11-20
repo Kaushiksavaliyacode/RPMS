@@ -201,7 +201,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
             <input
               type="text"
               placeholder="Search Job No..."
-              className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
+              className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
             />
           </div>
         </div>
@@ -212,15 +212,15 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
               onClick={() => handleJobSelect(job.id)}
               className={`p-4 rounded-xl cursor-pointer border transition-all duration-200 ${
                 selectedJobId === job.id
-                  ? 'bg-white border-emerald-500 shadow-md ring-1 ring-emerald-500 relative z-10'
-                  : 'bg-white border-slate-100 hover:border-emerald-300 hover:shadow-sm'
+                  ? 'bg-white border-blue-500 shadow-md ring-1 ring-blue-500 relative z-10'
+                  : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-sm'
               }`}
             >
                <div className="flex justify-between items-center mb-2">
                    <span className="text-lg font-black text-slate-800 block">#{job.srNo}</span>
                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
-                       job.slittingStatus === 'Running' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                       job.slittingStatus === 'Completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'
+                       job.slittingStatus === 'Running' ? 'bg-blue-50 text-blue-600 border-blue-100' : 
+                       job.slittingStatus === 'Completed' ? 'bg-blue-600 text-white border-blue-700 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100'
                    }`}>
                        {job.slittingStatus}
                    </span>
@@ -241,49 +241,49 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
         {selectedJob ? (
           <>
              {/* 1. LIGHT STATUS BAR HEADER (Sticky) */}
-             <div className="bg-white border-b border-slate-200 p-4 sticky top-0 z-30 shadow-sm shrink-0">
+             <div className="bg-blue-50/50 border-b border-blue-100 p-4 sticky top-0 z-30 shadow-sm shrink-0">
                 <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                     
                     <div className="flex items-center gap-4 w-full xl:w-auto">
-                        <button onClick={() => setMobileView('list')} className="lg:hidden p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors text-slate-600">
+                        <button onClick={() => setMobileView('list')} className="lg:hidden p-2 bg-white hover:bg-slate-50 rounded-full transition-colors text-slate-600 shadow-sm">
                             <ArrowLeft size={20} />
                         </button>
                         <div>
                             <div className="flex items-baseline gap-2">
-                                <h1 className="text-2xl font-black tracking-tight text-slate-800">#{selectedJob.srNo}</h1>
-                                <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-sm font-bold font-mono border border-emerald-100">{selectedJob.jobCode}</span>
+                                <h1 className="text-2xl font-black tracking-tight text-blue-950">#{selectedJob.srNo}</h1>
+                                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-sm font-bold font-mono border border-blue-200">{selectedJob.jobCode}</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Job Specs Stats */}
-                    <div className="flex flex-wrap items-center gap-4 sm:gap-8 w-full xl:w-auto bg-slate-50 xl:bg-transparent p-3 xl:p-0 rounded-lg border border-slate-100 xl:border-0">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-8 w-full xl:w-auto bg-white xl:bg-transparent p-3 xl:p-0 rounded-lg border border-blue-100 xl:border-0">
                          <div className="flex flex-col">
-                             <span className="uppercase text-[10px] font-bold text-slate-400 tracking-wider">Width</span>
-                             <span className="text-slate-800 font-bold text-sm">{selectedJob.size}<span className="text-xs font-normal text-slate-500 ml-0.5">mm</span></span>
+                             <span className="uppercase text-[10px] font-bold text-blue-400 tracking-wider">Width</span>
+                             <span className="text-blue-900 font-bold text-sm">{selectedJob.size}<span className="text-xs font-normal text-blue-600 ml-0.5">mm</span></span>
                          </div>
-                         <div className="w-px h-6 bg-slate-200"></div>
+                         <div className="w-px h-6 bg-blue-200"></div>
                          <div className="flex flex-col">
-                             <span className="uppercase text-[10px] font-bold text-slate-400 tracking-wider">Micron</span>
-                             <span className="text-slate-800 font-bold text-sm">{selectedJob.micron}<span className="text-xs font-normal text-slate-500 ml-0.5">µ</span></span>
+                             <span className="uppercase text-[10px] font-bold text-blue-400 tracking-wider">Micron</span>
+                             <span className="text-blue-900 font-bold text-sm">{selectedJob.micron}<span className="text-xs font-normal text-blue-600 ml-0.5">µ</span></span>
                          </div>
-                         <div className="w-px h-6 bg-slate-200"></div>
+                         <div className="w-px h-6 bg-blue-200"></div>
                          <div className="flex flex-col">
-                             <span className="uppercase text-[10px] font-bold text-slate-400 tracking-wider">Target</span>
-                             <span className="text-slate-800 font-bold text-sm">{selectedJob.totalQuantity}<span className="text-xs font-normal text-slate-500 ml-0.5">kg</span></span>
+                             <span className="uppercase text-[10px] font-bold text-blue-400 tracking-wider">Target</span>
+                             <span className="text-blue-900 font-bold text-sm">{selectedJob.totalQuantity}<span className="text-xs font-normal text-blue-600 ml-0.5">kg</span></span>
                          </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-4 w-full xl:w-auto border-t xl:border-t-0 pt-4 xl:pt-0 border-slate-100">
+                    <div className="flex items-center gap-4 w-full xl:w-auto border-t border-blue-100 xl:border-t-0 pt-4 xl:pt-0">
                          {/* Completion Toggle */}
                          <div className="flex items-center gap-3 mr-4">
-                            <span className={`text-xs font-bold uppercase tracking-wide ${isSlitComplete ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            <span className={`text-xs font-bold uppercase tracking-wide ${isSlitComplete ? 'text-blue-700' : 'text-slate-400'}`}>
                                 {isSlitComplete ? 'Slit Complete' : 'Mark Complete'}
                             </span>
                             <button 
                                 onClick={() => toggleCompletion(isSlitComplete)}
-                                className={`w-12 h-6 rounded-full transition-colors duration-300 relative flex items-center ${isSlitComplete ? 'bg-emerald-500' : 'bg-slate-200'}`}
+                                className={`w-12 h-6 rounded-full transition-colors duration-300 relative flex items-center ${isSlitComplete ? 'bg-blue-600' : 'bg-slate-200'}`}
                             >
                                 <div className={`w-5 h-5 bg-white rounded-full shadow-md absolute transition-transform duration-300 ${isSlitComplete ? 'translate-x-6' : 'translate-x-1'}`}></div>
                             </button>
@@ -291,7 +291,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
 
                         <button 
                             onClick={handleSave} 
-                            className="flex-1 xl:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm uppercase tracking-wide"
+                            className="flex-1 xl:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm uppercase tracking-wide"
                         >
                             <Save size={16} />
                             <span>Save All</span>
@@ -311,7 +311,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                          const coilTotal = rows.reduce((acc, row) => acc + calculateLiveNet(row.gross, row.core), 0);
 
                          return (
-                             <div key={coil.id} className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-[500px] sm:h-[600px] hover:border-emerald-300 transition-colors">
+                             <div key={coil.id} className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-[500px] sm:h-[600px] hover:border-blue-300 transition-colors">
                                  {/* Coil Header */}
                                  <div className="bg-slate-50 border-b border-slate-200 p-3 flex justify-between items-center">
                                      <div className="flex items-center gap-3">
@@ -325,21 +325,21 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                      </div>
                                      <div className="text-right">
                                          <p className="text-[10px] font-bold uppercase text-slate-400">Total Output</p>
-                                         <p className="text-emerald-600 font-black text-lg leading-none">{coilTotal.toFixed(3)}</p>
+                                         <p className="text-blue-600 font-black text-lg leading-none">{coilTotal.toFixed(3)}</p>
                                      </div>
                                  </div>
 
                                  {/* Separate Table for this Coil */}
                                  <div className="flex-1 overflow-auto relative bg-white">
                                      <table className="w-full text-left border-collapse">
-                                         <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-bold sticky top-0 z-10 shadow-sm">
+                                         <thead className="bg-blue-600 text-xs uppercase text-white font-bold sticky top-0 z-10 shadow-sm">
                                              <tr>
-                                                 <th className="p-3 border-b border-r border-slate-200 w-16 text-center">Sr</th>
-                                                 <th className="p-3 border-b border-r border-slate-200 text-center">Gross</th>
-                                                 <th className="p-3 border-b border-r border-slate-200 text-center">Core</th>
-                                                 <th className="p-3 border-b border-r border-slate-200 bg-emerald-50 text-emerald-700 text-center">Net</th>
-                                                 <th className="p-3 border-b border-slate-200 text-slate-400 text-center hidden sm:table-cell">Meter</th>
-                                                 <th className="p-3 border-b border-slate-200 w-10"></th>
+                                                 <th className="p-3 border-b border-r border-blue-700 w-16 text-center bg-blue-700">Sr</th>
+                                                 <th className="p-3 border-b border-r border-blue-500 text-center">Gross</th>
+                                                 <th className="p-3 border-b border-r border-blue-500 text-center">Core</th>
+                                                 <th className="p-3 border-b border-r border-blue-500 bg-blue-800 text-white text-center">Net</th>
+                                                 <th className="p-3 border-b border-blue-500 text-blue-100 text-center hidden sm:table-cell">Meter</th>
+                                                 <th className="p-3 border-b border-blue-700 w-10 bg-blue-700"></th>
                                              </tr>
                                          </thead>
                                          <tbody className="text-sm">
@@ -348,13 +348,13 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                                  const meter = calculateLiveMeter(net, coil.size);
 
                                                  return (
-                                                     <tr key={row.id} className="border-b border-slate-100 hover:bg-emerald-50/20 transition-colors group">
+                                                     <tr key={row.id} className="border-b border-slate-100 hover:bg-blue-50/20 transition-colors group">
                                                          <td className="p-1 border-r border-slate-100">
                                                              <input 
                                                                  type="text" 
                                                                  value={row.srNo}
                                                                  onChange={(e) => handleCellChange(coil.id, row.id, 'srNo', e.target.value)}
-                                                                 className="w-full text-center font-bold text-slate-600 outline-none bg-transparent p-2 focus:bg-white focus:ring-2 focus:ring-emerald-500 rounded-sm"
+                                                                 className="w-full text-center font-bold text-slate-600 outline-none bg-transparent p-2 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-sm"
                                                              />
                                                          </td>
                                                          <td className="p-1 border-r border-slate-100">
@@ -363,7 +363,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                                                  placeholder="0.000"
                                                                  value={row.gross}
                                                                  onChange={(e) => handleCellChange(coil.id, row.id, 'gross', e.target.value)}
-                                                                 className="w-full text-center font-medium text-slate-900 outline-none bg-transparent p-2 focus:bg-white focus:ring-2 focus:ring-emerald-500 rounded transition-all placeholder-slate-300"
+                                                                 className="w-full text-center font-medium text-slate-900 outline-none bg-transparent p-2 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded transition-all placeholder-slate-300"
                                                              />
                                                          </td>
                                                          <td className="p-1 border-r border-slate-100">
@@ -372,10 +372,10 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                                                  placeholder="0.000"
                                                                  value={row.core}
                                                                  onChange={(e) => handleCellChange(coil.id, row.id, 'core', e.target.value)}
-                                                                 className="w-full text-center font-medium text-slate-900 outline-none bg-transparent p-2 focus:bg-white focus:ring-2 focus:ring-emerald-500 rounded transition-all placeholder-slate-300"
+                                                                 className="w-full text-center font-medium text-slate-900 outline-none bg-transparent p-2 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded transition-all placeholder-slate-300"
                                                              />
                                                          </td>
-                                                         <td className="p-2 border-r border-slate-100 text-center font-bold text-emerald-600 bg-emerald-50/10">
+                                                         <td className="p-2 border-r border-slate-100 text-center font-bold text-blue-700 bg-blue-50/10">
                                                              {net > 0 ? net.toFixed(3) : '-'}
                                                          </td>
                                                          <td className="p-2 text-center font-mono text-slate-500 text-xs hidden sm:table-cell">
@@ -401,7 +401,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                      <div className="p-3 border-t border-slate-100 bg-slate-50/50 sticky bottom-0">
                                          <button 
                                              onClick={() => handleAddRows(coil.id)}
-                                             className="w-full py-2 border border-dashed border-slate-300 rounded-lg text-slate-400 text-xs font-bold hover:bg-white hover:border-emerald-300 hover:text-emerald-600 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
+                                             className="w-full py-2 border border-dashed border-slate-300 rounded-lg text-slate-400 text-xs font-bold hover:bg-white hover:border-blue-300 hover:text-blue-600 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
                                          >
                                              <Plus size={14} /> Add 5 More Rows
                                          </button>
@@ -415,8 +415,8 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-50 p-8 text-center">
-            <div className="bg-white p-6 rounded-full shadow-sm mb-4">
-                <Scissors size={48} className="text-emerald-200" />
+            <div className="bg-white p-6 rounded-full shadow-sm mb-4 border border-blue-50">
+                <Scissors size={48} className="text-blue-200" />
             </div>
             <h3 className="text-lg font-bold text-slate-700">No Job Selected</h3>
             <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">Select a pending job from the list to start entering coil data.</p>
