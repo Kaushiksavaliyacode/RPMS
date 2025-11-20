@@ -52,7 +52,9 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ onClose, onSubmit }) => {
       date: formData.date,
       note: formData.note,
       coils: coils,
-      status: 'Pending',
+      status: 'Pending', // Overall Status
+      productionStatus: 'Pending',
+      slittingStatus: 'Pending',
       productionData: [],
       slittingData: [],
       createdAt: Date.now(),

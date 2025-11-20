@@ -1,18 +1,20 @@
 export type Department = 'ADMIN' | 'PRODUCTION' | 'SLITTING';
 
+export type JobStatus = 'Pending' | 'Running' | 'Completed';
+
 export interface ProductionEntry {
   id: string;
   grossWeight: number;
   coreWeight: number;
   netWeight: number;
-  meter: number; // Added manual meter field
+  meter: number; 
   joints: number;
   timestamp: string;
 }
 
 export interface SlittingEntry {
   id: string;
-  coilId: string; // Identifies which coil (1, 2, 3, 4) this belongs to
+  coilId: string; 
   srNo: string;
   meter: number;
   grossWeight: number;
@@ -23,22 +25,29 @@ export interface SlittingEntry {
 
 export interface CoilDefinition {
   id: string;
-  label: string; // e.g., "Coil 1"
-  size: number; // mm
+  label: string; 
+  size: number; 
 }
 
 export interface JobCard {
   id: string;
   srNo: string;
   jobCode: string;
-  size: number; // Total width mm
+  size: number; 
   totalQuantity: number;
   micron: number;
   perRollMeter: number;
   date: string;
   note: string;
-  coils: CoilDefinition[]; // Max 4 coils
-  status: 'Pending' | 'Running' | 'Completed';
+  coils: CoilDefinition[]; 
+  
+  // Overall status (Derived)
+  status: JobStatus;
+  
+  // Department specific statuses
+  productionStatus: JobStatus;
+  slittingStatus: JobStatus;
+
   productionData: ProductionEntry[];
   slittingData: SlittingEntry[];
   createdAt: number;
