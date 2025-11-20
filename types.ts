@@ -26,9 +26,8 @@ export interface SlittingEntry {
 
 export interface CoilDefinition {
   id: string;
-  label: string; 
   size: number;
-  totalRolls: number; // Added field for target rolls count
+  totalRolls: number; // Target rolls count
 }
 
 export interface JobCard {

@@ -142,7 +142,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       const coilDef = selectedJob.coils.find(c => c.id === coilId);
       if (!coilDef) return;
 
-      rows.forEach(row => {
+      (rows as GridRow[]).forEach(row => {
         if (row.gross || row.core) {
           const gross = parseFloat(row.gross) || 0;
           const core = parseFloat(row.core) || 0;
@@ -263,7 +263,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                     {/* Job Specs Stats */}
                     <div className="flex flex-wrap items-center gap-4 sm:gap-8 w-full xl:w-auto bg-white xl:bg-transparent p-3 xl:p-0 rounded-lg border border-blue-100 xl:border-0">
                          <div className="flex flex-col">
-                             <span className="uppercase text-[10px] font-bold text-blue-400 tracking-wider">Target Length (Half)</span>
+                             <span className="uppercase text-[10px] font-bold text-blue-400 tracking-wider">Roll Length</span>
                              <span className="text-blue-900 font-bold text-sm">{targetRollLength}<span className="text-xs font-normal text-blue-600 ml-0.5">m</span></span>
                          </div>
                          <div className="w-px h-6 bg-blue-200"></div>

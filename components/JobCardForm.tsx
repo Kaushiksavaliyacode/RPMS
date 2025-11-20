@@ -21,14 +21,14 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ onClose, onSubmit }) => {
   });
 
   const [coils, setCoils] = useState<CoilDefinition[]>([
-    { id: 'coil-1', label: 'Coil 1', size: 0, totalRolls: 0 },
-    { id: 'coil-2', label: 'Coil 2', size: 0, totalRolls: 0 },
+    { id: 'coil-1', size: 0, totalRolls: 0 },
+    { id: 'coil-2', size: 0, totalRolls: 0 },
   ]);
 
   const handleAddCoil = () => {
     if (coils.length >= 4) return;
     const nextNum = coils.length + 1;
-    setCoils([...coils, { id: `coil-${nextNum}`, label: `Coil ${nextNum}`, size: 0, totalRolls: 0 }]);
+    setCoils([...coils, { id: `coil-${nextNum}`, size: 0, totalRolls: 0 }]);
   };
 
   const handleRemoveCoil = () => {
