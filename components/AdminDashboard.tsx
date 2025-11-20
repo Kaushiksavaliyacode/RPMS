@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { JobCard, JobStatus } from '../types';
 import JobCardForm from './JobCardForm';
-import { Plus, Trash2, Search, Database, Activity, BarChart3, Clock, ChevronDown, ChevronUp, Printer, TrendingUp, AlertTriangle, Calendar, Award, Scale } from 'lucide-react';
+import { Plus, Trash2, Search, Database, Activity, BarChart3, Clock, ChevronDown, ChevronUp, Printer, TrendingUp, AlertTriangle, Calendar, Award, Scale, Layers, Ruler, Weight } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
@@ -85,7 +85,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
              }
              
              // Datewise Slitting Logic
-             // Assuming timestamp format "DD/MM/YYYY, HH:MM:SS" or similar standard locale string
              const date = d.timestamp.split(',')[0].trim(); 
              if(!dateWise[date]) dateWise[date] = { prod: 0, slit: 0, count: 0 };
              dateWise[date].slit += d.netWeight;
@@ -96,7 +95,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
              const date = d.timestamp.split(',')[0].trim();
              if(!dateWise[date]) dateWise[date] = { prod: 0, slit: 0, count: 0 };
              dateWise[date].prod += d.netWeight;
-             dateWise[date].count += 1; // Entries count
+             dateWise[date].count += 1;
          });
       });
 
@@ -127,154 +126,117 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
       const s = status || 'Pending';
       const isProd = type === 'production';
       
-      // Production = Green, Slitting = Blue
+      // Compact Badges
       const prodColors = {
           'Pending': 'bg-slate-100 text-slate-500 border-slate-200',
           'Running': 'bg-emerald-50 text-emerald-600 border-emerald-200',
-          'Completed': 'bg-emerald-600 text-white border-emerald-700 shadow-sm shadow-emerald-200'
+          'Completed': 'bg-emerald-600 text-white border-emerald-700'
       };
       const slitColors = {
           'Pending': 'bg-slate-100 text-slate-500 border-slate-200',
           'Running': 'bg-blue-50 text-blue-600 border-blue-200',
-          'Completed': 'bg-blue-600 text-white border-blue-700 shadow-sm shadow-blue-200'
+          'Completed': 'bg-blue-600 text-white border-blue-700'
       };
 
       const colors = isProd ? prodColors : slitColors;
 
       return (
-        <div className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold uppercase tracking-wide transition-all ${colors[s]}`}>
-            <span>{type === 'production' ? 'Prod' : 'Slit'}: {s}</span>
+        <div className={`flex items-center justify-center px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-wider min-w-[70px] ${colors[s]}`}>
+            {s}
         </div>
       );
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 print:space-y-4 pb-20">
+    <div className="space-y-4 animate-in fade-in duration-500 print:space-y-4 pb-20">
       
-      {/* --- TOP SECTION: KEY METRICS --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 no-print">
-         {/* Production Output - GREEN */}
-         <div className="bg-gradient-to-br from-emerald-50 to-white p-6 rounded-2xl shadow-sm border border-emerald-100 relative overflow-hidden group">
-           <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-               <Activity size={80} className="text-emerald-600"/>
-           </div>
-           <div className="flex items-center gap-3 mb-2">
-               <div className="p-2 bg-emerald-100 rounded-lg text-emerald-600"><Activity size={20}/></div>
-               <p className="text-emerald-800 text-sm font-bold uppercase tracking-wider">Total Production</p>
-           </div>
-           <h3 className="text-4xl font-black text-emerald-700 tracking-tight">{analytics.totalProd.toFixed(3)} <span className="text-lg font-medium opacity-60">kg</span></h3>
-        </div>
+      {/* --- COMPACT METRICS BAR --- */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 no-print">
+         <div className="bg-emerald-50/50 rounded-lg border border-emerald-100 p-3 flex flex-col justify-center relative overflow-hidden">
+             <div className="flex items-center gap-2 mb-1">
+                 <Activity size={14} className="text-emerald-600"/>
+                 <span className="text-[10px] font-bold uppercase text-emerald-700 tracking-wider">Production</span>
+             </div>
+             <span className="text-2xl font-black text-emerald-700 leading-none">{analytics.totalProd.toFixed(0)} <span className="text-xs font-medium">kg</span></span>
+         </div>
 
-         {/* Slitting Output - BLUE */}
-         <div className="bg-gradient-to-br from-blue-50 to-white p-6 rounded-2xl shadow-sm border border-blue-100 relative overflow-hidden group">
-           <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-               <Database size={80} className="text-blue-600"/>
-           </div>
-           <div className="flex items-center gap-3 mb-2">
-               <div className="p-2 bg-blue-100 rounded-lg text-blue-600"><Database size={20}/></div>
-               <p className="text-blue-800 text-sm font-bold uppercase tracking-wider">Total Slitting</p>
-           </div>
-           <h3 className="text-4xl font-black text-blue-700 tracking-tight">{analytics.totalSlit.toFixed(3)} <span className="text-lg font-medium opacity-60">kg</span></h3>
-        </div>
+         <div className="bg-blue-50/50 rounded-lg border border-blue-100 p-3 flex flex-col justify-center relative overflow-hidden">
+             <div className="flex items-center gap-2 mb-1">
+                 <Database size={14} className="text-blue-600"/>
+                 <span className="text-[10px] font-bold uppercase text-blue-700 tracking-wider">Slitting</span>
+             </div>
+             <span className="text-2xl font-black text-blue-700 leading-none">{analytics.totalSlit.toFixed(0)} <span className="text-xs font-medium">kg</span></span>
+         </div>
 
-        {/* Wastage - RED */}
-        <div className="bg-gradient-to-br from-red-50 to-white p-6 rounded-2xl shadow-sm border border-red-100 relative overflow-hidden group">
-           <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-               <AlertTriangle size={80} className="text-red-600"/>
-           </div>
-           <div className="flex items-center gap-3 mb-2">
-               <div className="p-2 bg-red-100 rounded-lg text-red-600"><AlertTriangle size={20}/></div>
-               <p className="text-red-800 text-sm font-bold uppercase tracking-wider">Total Wastage</p>
-           </div>
-           <h3 className="text-4xl font-black text-red-600 tracking-tight">{analytics.totalWastage.toFixed(3)} <span className="text-lg font-medium opacity-60">kg</span></h3>
-        </div>
+         <div className="bg-red-50/50 rounded-lg border border-red-100 p-3 flex flex-col justify-center relative overflow-hidden">
+             <div className="flex items-center gap-2 mb-1">
+                 <AlertTriangle size={14} className="text-red-600"/>
+                 <span className="text-[10px] font-bold uppercase text-red-700 tracking-wider">Wastage</span>
+             </div>
+             <span className="text-2xl font-black text-red-600 leading-none">{analytics.totalWastage.toFixed(0)} <span className="text-xs font-medium">kg</span></span>
+         </div>
+
+         <div className="bg-white rounded-lg border border-slate-200 p-3 flex flex-col justify-center">
+             <div className="flex items-center gap-2 mb-1">
+                 <Award size={14} className="text-slate-500"/>
+                 <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Top Job</span>
+             </div>
+             <span className="text-lg font-black text-slate-700 leading-none truncate">{analytics.topJob[0]}</span>
+         </div>
       </div>
 
-      {/* --- ANALYTICS DASHBOARD --- */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 no-print">
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="bg-purple-50 p-3 rounded-full text-purple-600">
-                  <Award size={24} />
-              </div>
-              <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase">Top Job Code</p>
-                  <p className="text-lg font-black text-slate-800">{analytics.topJob[0]} <span className="text-xs font-normal text-slate-400">({analytics.topJob[1].toFixed(0)}kg)</span></p>
-              </div>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="bg-emerald-50 p-3 rounded-full text-emerald-600">
-                  <Scale size={24} />
-              </div>
-              <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase">Best Prod Size</p>
-                  <p className="text-lg font-black text-slate-800">{analytics.topProdSize[0]}mm <span className="text-xs font-normal text-slate-400">({analytics.topProdSize[1].toFixed(0)}kg)</span></p>
-              </div>
-          </div>
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="bg-blue-50 p-3 rounded-full text-blue-600">
-                  <Scale size={24} />
-              </div>
-              <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase">Best Slit Size</p>
-                  <p className="text-lg font-black text-slate-800">{analytics.topSlitSize[0]}mm <span className="text-xs font-normal text-slate-400">({analytics.topSlitSize[1].toFixed(0)}kg)</span></p>
-              </div>
-          </div>
-      </div>
-
-      {/* --- CONTROLS --- */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm no-print">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+      {/* --- COMPACT CONTROLS --- */}
+      <div className="flex gap-2 bg-white p-2 rounded-lg border border-slate-200 shadow-sm no-print">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
           <input
             type="text"
-            placeholder="Search Job Code or Sr No..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm transition-all font-medium"
+            className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-medium focus:ring-1 focus:ring-slate-900 outline-none"
           />
         </div>
-        <div className="flex w-full md:w-auto gap-2">
-            <button
+        <button
             onClick={handlePrint}
-            className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-6 py-3 rounded-xl transition-all font-bold text-xs uppercase tracking-wide"
-            >
-            <Printer size={16} />
-            <span className="hidden sm:inline">Print Report</span>
-            </button>
-            <button
+            className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wide transition-colors"
+        >
+            <Printer size={14} />
+            <span className="hidden sm:inline">Report</span>
+        </button>
+        <button
             onClick={() => setShowForm(true)}
-            className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl shadow-lg shadow-slate-900/20 transition-all font-bold text-xs uppercase tracking-wide"
-            >
-            <Plus size={16} />
-            <span>Create Job</span>
-            </button>
-        </div>
+            className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-1.5 rounded-md shadow-sm font-bold text-xs uppercase tracking-wide transition-colors"
+        >
+            <Plus size={14} />
+            <span>New Job</span>
+        </button>
       </div>
 
-      {/* --- DATEWISE REPORT TABLE --- */}
+      {/* --- DATEWISE TABLE (Collapsible or Compact) --- */}
       {analytics.dateReport.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm no-print">
-             <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                 <Calendar size={18} className="text-slate-500"/>
-                 <h3 className="font-bold text-slate-700">Datewise Report</h3>
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm no-print">
+             <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center gap-2">
+                 <Calendar size={14} className="text-slate-400"/>
+                 <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wide">Daily Production Summary</h3>
              </div>
-             <div className="overflow-x-auto">
-                 <table className="w-full text-sm text-left">
-                     <thead className="bg-slate-50 text-slate-500 font-bold text-xs uppercase border-b border-slate-200">
+             <div className="max-h-40 overflow-y-auto">
+                 <table className="w-full text-xs text-left">
+                     <thead className="bg-slate-50 text-slate-500 font-bold sticky top-0 z-10">
                          <tr>
-                             <th className="px-6 py-3">Date</th>
-                             <th className="px-6 py-3 text-emerald-600">Production (kg)</th>
-                             <th className="px-6 py-3 text-blue-600">Slitting (kg)</th>
-                             <th className="px-6 py-3 text-red-600">Wastage (kg)</th>
+                             <th className="px-3 py-1.5 border-b">Date</th>
+                             <th className="px-3 py-1.5 border-b text-emerald-700">Production</th>
+                             <th className="px-3 py-1.5 border-b text-blue-700">Slitting</th>
+                             <th className="px-3 py-1.5 border-b text-red-700">Wastage</th>
                          </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-100">
                          {analytics.dateReport.map((day, idx) => (
-                             <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                 <td className="px-6 py-3 font-medium text-slate-700">{day.date}</td>
-                                 <td className="px-6 py-3 font-bold text-emerald-600">{day.prod.toFixed(3)}</td>
-                                 <td className="px-6 py-3 font-bold text-blue-600">{day.slit.toFixed(3)}</td>
-                                 <td className="px-6 py-3 font-bold text-red-600">{day.wastage.toFixed(3)}</td>
+                             <tr key={idx} className="hover:bg-slate-50">
+                                 <td className="px-3 py-1 font-medium text-slate-700">{day.date}</td>
+                                 <td className="px-3 py-1 font-bold text-emerald-600">{day.prod.toFixed(1)}</td>
+                                 <td className="px-3 py-1 font-bold text-blue-600">{day.slit.toFixed(1)}</td>
+                                 <td className="px-3 py-1 font-bold text-red-600">{day.wastage.toFixed(1)}</td>
                              </tr>
                          ))}
                      </tbody>
@@ -283,150 +245,155 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
         </div>
       )}
 
-      {/* --- JOB LISTING --- */}
-      <div className="space-y-4">
-        <div className="print-only hidden mb-4">
-            <h1 className="text-2xl font-bold">Production Report</h1>
-            <p className="text-sm text-slate-500">Generated on {new Date().toLocaleString()}</p>
-        </div>
-
+      {/* --- COMPACT JOB LIST --- */}
+      <div className="grid grid-cols-1 gap-2">
         {filteredJobs.length > 0 ? (
             filteredJobs.map(job => {
                 const prodTotal = job.productionData.reduce((acc, curr) => acc + curr.netWeight, 0);
                 const slitTotal = job.slittingData.reduce((acc, curr) => acc + curr.netWeight, 0);
                 const wastage = prodTotal - slitTotal;
 
-                // Calculate Coil Breakdown
-                const coilBreakdown = job.coils.map(coil => {
-                    const weight = job.slittingData
-                        .filter(d => d.coilId === coil.id)
-                        .reduce((acc, curr) => acc + curr.netWeight, 0);
-                    return { ...coil, weight };
+                // Group Slitting Data by Coil Size
+                const sizeSummary: Record<string, number> = {};
+                job.coils.forEach(c => sizeSummary[c.size] = 0);
+                job.slittingData.forEach(d => {
+                    const coil = job.coils.find(c => c.id === d.coilId);
+                    if(coil) sizeSummary[coil.size] += d.netWeight;
                 });
 
                 return (
-                <div key={job.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:border-slate-300 transition-all duration-300 break-inside-avoid">
-                    {/* Card Header */}
-                    <div className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleExpand(job.id)}>
-                        <div className="flex items-center gap-4 w-full md:w-auto">
-                            <div className="p-3 rounded-xl bg-slate-100 text-slate-500 border border-slate-200">
-                                <Clock size={24} />
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex items-baseline gap-3 flex-wrap">
-                                    <h3 className="text-xl font-black text-slate-800 tracking-tight">#{job.srNo}</h3>
-                                    <span className="text-sm font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{job.jobCode}</span>
-                                </div>
-                                {/* Dual Status Badges */}
-                                <div className="flex gap-2 mt-2">
-                                    {renderStatusBadge(job.productionStatus, 'production')}
-                                    {renderStatusBadge(job.slittingStatus, 'slitting')}
-                                </div>
-                            </div>
-                        </div>
+                <div key={job.id} className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden hover:border-slate-400 transition-all break-inside-avoid">
+                    {/* Compact Header */}
+                    <div className="p-3 flex flex-col sm:flex-row items-center justify-between gap-2 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleExpand(job.id)}>
                         
-                        <div className="flex items-center gap-4 md:gap-8 text-sm w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0 border-slate-100 mt-2 md:mt-0">
-                            <div className="text-left md:text-right">
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Target</p>
-                                <p className="font-bold text-slate-700 text-lg">{job.totalQuantity.toFixed(0)} <span className="text-xs font-normal text-slate-400">kg</span></p>
-                            </div>
-                            <div className="text-left md:text-right">
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Size</p>
-                                <p className="font-bold text-slate-700 text-lg">{job.size} <span className="text-xs font-normal text-slate-400">mm</span></p>
-                            </div>
-                            
-                            <div className="flex gap-2 no-print">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteJob(job.id);
-                                    }}
-                                    className="p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                >
-                                    <Trash2 size={20} />
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                             <div className={`w-1.5 h-8 rounded-full ${job.status === 'Completed' ? 'bg-slate-800' : 'bg-slate-300'}`}></div>
+                             <div>
+                                 <div className="flex items-baseline gap-2">
+                                    <h3 className="text-base font-black text-slate-800 leading-none">#{job.srNo}</h3>
+                                    <span className="text-xs font-bold text-slate-500">{job.jobCode}</span>
+                                 </div>
+                                 <p className="text-[10px] text-slate-400 font-medium">{job.date}</p>
+                             </div>
+                        </div>
+
+                        {/* Status Pills */}
+                        <div className="flex gap-2">
+                             <div className="flex flex-col gap-1">
+                                 <span className="text-[9px] font-bold text-slate-400 uppercase text-center">Prod</span>
+                                 {renderStatusBadge(job.productionStatus, 'production')}
+                             </div>
+                             <div className="flex flex-col gap-1">
+                                 <span className="text-[9px] font-bold text-slate-400 uppercase text-center">Slit</span>
+                                 {renderStatusBadge(job.slittingStatus, 'slitting')}
+                             </div>
+                        </div>
+
+                        {/* Quick Stats */}
+                        <div className="flex items-center gap-4 text-xs w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
+                             <div className="text-right">
+                                 <span className="block text-[9px] font-bold text-slate-400 uppercase">Size</span>
+                                 <span className="font-bold text-slate-700">{job.size}mm</span>
+                             </div>
+                             <div className="text-right">
+                                 <span className="block text-[9px] font-bold text-slate-400 uppercase">Micron</span>
+                                 <span className="font-bold text-slate-700">{job.micron}µ</span>
+                             </div>
+                             <div className="text-right">
+                                 <span className="block text-[9px] font-bold text-slate-400 uppercase">Target</span>
+                                 <span className="font-bold text-slate-700">{job.totalQuantity}kg</span>
+                             </div>
+                             
+                             <div className="flex gap-1 no-print ml-2">
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteJob(job.id); }} className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded">
+                                    <Trash2 size={14} />
                                 </button>
-                                <div className="text-slate-300 hover:text-slate-600 transition-colors flex items-center">
-                                    {expandedJob === job.id ? <ChevronUp size={24}/> : <ChevronDown size={24}/>}
+                                <div className="text-slate-300 p-1.5">
+                                    {expandedJob === job.id ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Expanded Content */}
+                    {/* Expanded Details */}
                     {(expandedJob === job.id || window.matchMedia('print').matches) && (
-                        <div className={`border-t border-slate-100 bg-slate-50/30 p-4 md:p-6 animate-in slide-in-from-top-2 duration-200 ${window.matchMedia('print').matches ? 'block' : ''}`}>
-                            {/* Process Summary */}
-                            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="bg-white p-5 rounded-xl border border-emerald-100 shadow-sm relative overflow-hidden">
-                                    <div className="absolute right-0 top-0 p-2 opacity-5"><Activity size={48} className="text-emerald-600"/></div>
-                                    <p className="text-xs text-emerald-600 uppercase font-bold tracking-wide mb-1">Production</p>
-                                    <p className="text-2xl font-black text-emerald-700">{prodTotal.toFixed(3)} kg</p>
+                        <div className="border-t border-slate-200 bg-slate-50/30 p-3 text-sm animate-in slide-in-from-top-1">
+                            
+                            {/* Full Job Specs Bar */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3 bg-white p-2 rounded border border-slate-200 shadow-sm">
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Job Code</span>
+                                    <span className="font-bold text-slate-800">{job.jobCode}</span>
                                 </div>
-                                <div className="bg-white p-5 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden">
-                                    <div className="absolute right-0 top-0 p-2 opacity-5"><Database size={48} className="text-blue-600"/></div>
-                                    <p className="text-xs text-blue-600 uppercase font-bold tracking-wide mb-1">Slitting</p>
-                                    <p className="text-2xl font-black text-blue-700">{slitTotal.toFixed(3)} kg</p>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Size / Micron</span>
+                                    <span className="font-bold text-slate-800">{job.size}mm / {job.micron}µ</span>
                                 </div>
-                                <div className={`bg-white p-5 rounded-xl border shadow-sm relative overflow-hidden ${wastage > 0 ? 'border-red-200 bg-red-50/20' : 'border-slate-200'}`}>
-                                    <div className="absolute right-0 top-0 p-2 opacity-5"><AlertTriangle size={48} className="text-red-600"/></div>
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-xs text-slate-500 uppercase font-bold tracking-wide mb-1">Wastage</p>
-                                    </div>
-                                    <p className={`text-2xl font-black ${wastage > 0 ? 'text-red-600' : 'text-slate-700'}`}>
-                                        {wastage.toFixed(3)} kg
-                                    </p>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Target Qty</span>
+                                    <span className="font-bold text-slate-800">{job.totalQuantity} kg</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Created Date</span>
+                                    <span className="font-bold text-slate-800">{job.date}</span>
                                 </div>
                             </div>
 
-                            {/* Coil Breakdown Section */}
-                            <div className="mb-6 bg-white rounded-xl border border-slate-200 p-5">
-                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Coil Breakdown (Slitting)</h4>
-                                <div className="flex flex-wrap gap-4">
-                                    {coilBreakdown.map(coil => (
-                                        <div key={coil.id} className="flex-1 min-w-[180px] bg-blue-50/30 rounded-lg p-4 border border-blue-100">
-                                            <div className="flex flex-col mb-3">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                   <span className="text-2xl font-black text-blue-900">{coil.size}mm</span>
-                                                </div>
-                                                <span className="text-xs font-bold text-blue-500 uppercase tracking-wide">Target Rolls: {coil.totalRolls || '-'}</span>
-                                            </div>
-                                            <div className="border-t border-blue-100 pt-2 mt-2">
-                                                <p className="text-xs text-slate-400 uppercase tracking-wider">Actual</p>
-                                                <p className="text-lg font-bold text-blue-700">{coil.weight.toFixed(3)} <span className="text-xs font-normal text-blue-400">kg</span></p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                            {/* Summary Stats Row */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                                 {/* Prod Total */}
+                                 <div className="bg-emerald-50 border border-emerald-200 p-2 rounded flex justify-between items-center">
+                                     <span className="text-[10px] font-bold text-emerald-600 uppercase">Total Production</span>
+                                     <span className="text-sm font-black text-emerald-800">{prodTotal.toFixed(3)} kg</span>
+                                 </div>
+                                 {/* Slit Total */}
+                                 <div className="bg-blue-50 border border-blue-200 p-2 rounded flex justify-between items-center">
+                                     <span className="text-[10px] font-bold text-blue-600 uppercase">Total Slitting</span>
+                                     <span className="text-sm font-black text-blue-800">{slitTotal.toFixed(3)} kg</span>
+                                 </div>
+                                 {/* Wastage */}
+                                 <div className={`p-2 rounded flex justify-between items-center border ${wastage > 0 ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-200'}`}>
+                                     <span className={`text-[10px] font-bold uppercase ${wastage > 0 ? 'text-red-600' : 'text-slate-500'}`}>Wastage</span>
+                                     <span className={`text-sm font-black ${wastage > 0 ? 'text-red-700' : 'text-slate-700'}`}>{wastage.toFixed(3)} kg</span>
+                                 </div>
+                                 {/* Status Check */}
+                                 <div className="p-2 bg-white border border-slate-200 rounded flex items-center justify-between">
+                                     <span className="text-[10px] font-bold text-slate-500 uppercase">System Status</span>
+                                     <span className="text-[10px] font-bold bg-slate-100 px-2 py-0.5 rounded">{job.productionStatus === 'Completed' && job.slittingStatus === 'Completed' ? 'FULL COMPLETE' : 'IN PROGRESS'}</span>
+                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                {/* Live Production Data View */}
-                                <div className="bg-white rounded-xl border border-emerald-100 p-5 shadow-sm">
-                                    <div className="flex justify-between items-center mb-4 border-b border-emerald-50 pb-3">
-                                        <h4 className="font-bold text-emerald-700 flex items-center gap-2">
-                                            <Activity size={18}/> Production Logs
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                {/* Production Log Table */}
+                                <div className="bg-white border border-slate-200 rounded overflow-hidden">
+                                    <div className="bg-emerald-50 px-3 py-1.5 border-b border-emerald-100 flex justify-between items-center">
+                                        <h4 className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide flex items-center gap-1">
+                                            <Activity size={12}/> Production Log
                                         </h4>
+                                        <span className="text-[10px] font-bold text-emerald-600">Count: {job.productionData.length}</span>
                                     </div>
-                                    <div className="max-h-60 overflow-y-auto pr-2">
-                                        <table className="w-full text-xs text-left">
-                                            <thead className="text-emerald-600/70 font-medium bg-emerald-50 sticky top-0">
+                                    <div className="overflow-x-auto max-h-60">
+                                        <table className="w-full text-[11px] text-left">
+                                            <thead className="bg-slate-50 text-slate-500 font-bold sticky top-0 shadow-sm">
                                                 <tr>
-                                                    <th className="px-2 py-2 rounded-l">Time</th>
-                                                    <th className="px-2 py-2">Net Weight</th>
-                                                    <th className="px-2 py-2">Meter</th>
-                                                    <th className="px-2 py-2 rounded-r">Joints</th>
+                                                    <th className="px-2 py-1.5 border-b">Time</th>
+                                                    <th className="px-2 py-1.5 border-b text-center">Size (mm)</th>
+                                                    <th className="px-2 py-1.5 border-b text-right text-emerald-700">Net Wt (kg)</th>
+                                                    <th className="px-2 py-1.5 border-b text-right">Meter</th>
+                                                    <th className="px-2 py-1.5 border-b text-center">Joints</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-emerald-50 text-slate-600">
+                                            <tbody className="divide-y divide-slate-100 text-slate-600">
                                                 {job.productionData.length === 0 ? (
-                                                    <tr><td colSpan={4} className="text-center py-6 text-slate-400 italic">No logs yet</td></tr>
+                                                    <tr><td colSpan={5} className="text-center py-4 italic text-slate-400">No production data</td></tr>
                                                 ) : (
                                                     job.productionData.map(d => (
-                                                        <tr key={d.id} className="hover:bg-emerald-50/30 transition-colors">
-                                                            <td className="px-2 py-2.5">{d.timestamp.split(',')[1]}</td>
-                                                            <td className="px-2 py-2.5 font-bold text-emerald-700">{d.netWeight.toFixed(3)}</td>
-                                                            <td className="px-2 py-2.5 font-mono text-slate-500">{d.meter || '-'}</td>
-                                                            <td className="px-2 py-2.5">{d.joints}</td>
+                                                        <tr key={d.id} className="hover:bg-emerald-50/30">
+                                                            <td className="px-2 py-1 font-mono text-[10px]">{d.timestamp.split(',')[1]}</td>
+                                                            <td className="px-2 py-1 text-center font-bold text-slate-700">{job.size}</td>
+                                                            <td className="px-2 py-1 text-right font-bold text-emerald-700">{d.netWeight.toFixed(3)}</td>
+                                                            <td className="px-2 py-1 text-right">{d.meter}</td>
+                                                            <td className="px-2 py-1 text-center">{d.joints}</td>
                                                         </tr>
                                                     ))
                                                 )}
@@ -435,47 +402,63 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                                     </div>
                                 </div>
 
-                                {/* Live Slitting Data View */}
-                                <div className="bg-white rounded-xl border border-blue-100 p-5 shadow-sm">
-                                    <div className="flex justify-between items-center mb-4 border-b border-blue-50 pb-3">
-                                        <h4 className="font-bold text-blue-700 flex items-center gap-2">
-                                            <Database size={18}/> Slitting Logs
-                                        </h4>
+                                {/* Slitting Log Table & Breakdown */}
+                                <div className="flex flex-col gap-2">
+                                    {/* Size Summary Breakdown */}
+                                    <div className="bg-blue-50/30 border border-blue-100 rounded p-2">
+                                        <h5 className="text-[10px] font-bold text-blue-400 uppercase mb-1">Output by Coil Size</h5>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {Object.entries(sizeSummary).map(([size, weight]) => (
+                                                <div key={size} className="bg-white border border-blue-100 px-2 py-1 rounded flex items-center gap-2 shadow-sm">
+                                                    <span className="text-xs font-bold text-slate-700">{size}mm</span>
+                                                    <span className="text-xs font-mono font-medium text-blue-600">{weight.toFixed(3)}kg</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                     <div className="max-h-60 overflow-y-auto pr-2">
-                                        <table className="w-full text-xs text-left">
-                                            <thead className="text-blue-600/70 font-medium bg-blue-50 sticky top-0">
-                                                <tr>
-                                                    <th className="px-2 py-2 rounded-l">Sr No</th>
-                                                    <th className="px-2 py-2">Coil (Size)</th>
-                                                    <th className="px-2 py-2">Net Wt</th>
-                                                    <th className="px-2 py-2 rounded-r">Meter</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-blue-50 text-slate-600">
-                                                {job.slittingData.length === 0 ? (
-                                                    <tr><td colSpan={4} className="text-center py-6 text-slate-400 italic">No logs yet</td></tr>
-                                                ) : (
-                                                    job.slittingData.map(d => {
-                                                        const coil = job.coils.find(c => c.id === d.coilId);
-                                                        return (
-                                                        <tr key={d.id} className="hover:bg-blue-50/30 transition-colors">
-                                                            <td className="px-2 py-2.5 font-mono">{d.srNo}</td>
-                                                            <td className="px-2 py-2.5 text-slate-500">{coil ? `${coil.size}mm` : '-'}</td>
-                                                            <td className="px-2 py-2.5 font-bold text-blue-700">{d.netWeight.toFixed(3)}</td>
-                                                            <td className="px-2 py-2.5 font-mono text-slate-500">{d.meter.toFixed(0)}</td>
-                                                        </tr>
-                                                    )})
-                                                )}
-                                            </tbody>
-                                        </table>
+
+                                    <div className="bg-white border border-slate-200 rounded overflow-hidden flex-1">
+                                        <div className="bg-blue-50 px-3 py-1.5 border-b border-blue-100 flex justify-between items-center">
+                                            <h4 className="text-[11px] font-bold text-blue-800 uppercase tracking-wide flex items-center gap-1">
+                                                <Database size={12}/> Slitting Log
+                                            </h4>
+                                            <span className="text-[10px] font-bold text-blue-600">Count: {job.slittingData.length}</span>
+                                        </div>
+                                        <div className="overflow-x-auto max-h-48">
+                                            <table className="w-full text-[11px] text-left">
+                                                <thead className="bg-slate-50 text-slate-500 font-bold sticky top-0 shadow-sm">
+                                                    <tr>
+                                                        <th className="px-2 py-1.5 border-b">Sr No</th>
+                                                        <th className="px-2 py-1.5 border-b text-center">Size (mm)</th>
+                                                        <th className="px-2 py-1.5 border-b text-right text-blue-700">Net Wt (kg)</th>
+                                                        <th className="px-2 py-1.5 border-b text-right">Meter</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 text-slate-600">
+                                                    {job.slittingData.length === 0 ? (
+                                                        <tr><td colSpan={4} className="text-center py-4 italic text-slate-400">No slitting data</td></tr>
+                                                    ) : (
+                                                        job.slittingData.map(d => {
+                                                            const coil = job.coils.find(c => c.id === d.coilId);
+                                                            return (
+                                                            <tr key={d.id} className="hover:bg-blue-50/30">
+                                                                <td className="px-2 py-1 font-mono font-bold text-slate-700">{d.srNo}</td>
+                                                                <td className="px-2 py-1 text-center font-bold text-slate-700">{coil ? coil.size : '-'}</td>
+                                                                <td className="px-2 py-1 text-right font-bold text-blue-700">{d.netWeight.toFixed(3)}</td>
+                                                                <td className="px-2 py-1 text-right">{d.meter.toFixed(0)}</td>
+                                                            </tr>
+                                                        )})
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
+
                             {job.note && (
-                                <div className="mt-6 p-3 bg-slate-50 text-slate-600 text-xs rounded-lg border border-slate-100 flex items-start gap-2 italic">
-                                    <span className="not-italic font-bold text-slate-800">Note:</span> {job.note}
+                                <div className="mt-2 text-[10px] text-slate-500 italic bg-slate-50 p-1.5 rounded border border-slate-100">
+                                    <span className="font-bold not-italic text-slate-700">Note:</span> {job.note}
                                 </div>
                             )}
                         </div>
@@ -483,26 +466,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                 </div>
             )})
         ) : (
-            <div className="text-center py-24 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                <div className="bg-slate-50 p-4 rounded-full inline-block mb-4">
-                    <Database size={32} className="text-slate-300" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-800">No Job Cards Found</h3>
-                <p className="text-slate-400 mt-1 mb-6 text-sm">Get started by creating a new job card for production.</p>
-                <button
-                    onClick={() => setShowForm(true)}
-                    className="inline-flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-lg transition-all font-bold text-xs uppercase tracking-wide"
-                >
-                    <Plus size={16} />
-                    <span>Create New Job</span>
-                </button>
+            <div className="text-center py-12">
+                <p className="text-slate-400 text-sm font-medium">No jobs found. Create one to get started.</p>
             </div>
         )}
       </div>
 
-      {/* Hidden Reset Button */}
-      <button onClick={handleSystemReset} className="fixed bottom-4 right-4 opacity-0 hover:opacity-100 bg-red-600 text-white p-2 rounded text-xs z-50">
-          Reset DB
+      <button onClick={handleSystemReset} className="fixed bottom-2 right-2 opacity-0 hover:opacity-100 bg-red-600 text-white p-1 rounded text-[10px] z-50">
+          Reset
       </button>
 
       {showForm && <JobCardForm onClose={() => setShowForm(false)} onSubmit={handleCreateJob} />}
