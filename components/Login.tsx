@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { User, Department } from '../types';
 import { Lock, User as UserIcon, Shield, Scissors, Factory, Hexagon } from 'lucide-react';
@@ -14,11 +15,28 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Specific credentials as requested
-    if (username === 'Reliance' && password === 'Reliance.123') {
+    
+    let isValid = false;
+
+    // Department-specific credentials check
+    switch (role) {
+      case 'ADMIN':
+        if (username === 'Ridhish' && password === 'Ridhish.5626') isValid = true;
+        break;
+      case 'PRODUCTION':
+        if (username === 'Production' && password === 'Production.8931') isValid = true;
+        break;
+      case 'SLITTING':
+        if (username === 'Slitting' && password === 'Slitting.3189') isValid = true;
+        break;
+      default:
+        isValid = false;
+    }
+
+    if (isValid) {
       onLogin({ role, isAuthenticated: true });
     } else {
-      setError('Invalid ID or Password');
+      setError(`Invalid credentials for ${role} department`);
     }
   };
 
@@ -42,7 +60,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="grid grid-cols-3 gap-3 mb-8">
           <button
             type="button"
-            onClick={() => setRole('ADMIN')}
+            onClick={() => { setRole('ADMIN'); setError(''); }}
             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
               role === 'ADMIN'
                 ? 'bg-slate-900 border-slate-900 text-white shadow-lg scale-105'
@@ -54,7 +72,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </button>
           <button
             type="button"
-            onClick={() => setRole('PRODUCTION')}
+            onClick={() => { setRole('PRODUCTION'); setError(''); }}
             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
               role === 'PRODUCTION'
                 ? 'bg-emerald-600 border-emerald-600 text-white shadow-lg scale-105'
@@ -66,7 +84,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </button>
           <button
             type="button"
-            onClick={() => setRole('SLITTING')}
+            onClick={() => { setRole('SLITTING'); setError(''); }}
             className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200 ${
               role === 'SLITTING'
                 ? 'bg-blue-600 border-blue-600 text-white shadow-lg scale-105'

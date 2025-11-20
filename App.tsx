@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, JobCard } from './types';
 import { subscribeToJobs, addJobToFirebase, updateJobInFirebase, deleteJobFromFirebase } from './services/storage';
@@ -82,6 +83,15 @@ const App: React.FC = () => {
     }
   };
 
+  const getUserDisplayName = () => {
+    switch(user.role) {
+      case 'ADMIN': return 'Ridhish';
+      case 'PRODUCTION': return 'Production';
+      case 'SLITTING': return 'Slitting';
+      default: return 'User';
+    }
+  };
+
   return (
     <div className="min-h-[100dvh] bg-slate-50 flex flex-col font-sans">
       {/* Top Navigation Bar - Hidden on Print */}
@@ -106,7 +116,7 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center space-x-4 md:space-x-6">
             <span className="text-sm text-white/80 hidden md:inline font-medium">
-              User: <span className="text-white">Reliance</span>
+              User: <span className="text-white">{getUserDisplayName()}</span>
             </span>
             <button
               onClick={() => setUser(null)}
