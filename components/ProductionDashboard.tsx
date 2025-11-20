@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { JobCard, ProductionEntry, JobStatus } from '../types';
-import { Search, PlayCircle, Activity, CheckCircle, Save, Trash2, ArrowLeft, Plus, RotateCcw, Check } from 'lucide-react';
+import { Search, Activity, Save, Trash2, ArrowLeft, Plus, CloudLightning } from 'lucide-react';
 
 interface ProductionDashboardProps {
   jobs: JobCard[];
@@ -22,15 +23,20 @@ const generateEmptyRows = (count: number) => {
 const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdateJob }) => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
+  const [isSaving, setIsSaving] = useState(false);
   
   // Excel-like Grid State
   const [gridData, setGridData] = useState<any[]>([]);
   
+  // Ref to track if we are currently typing (to prevent overwriting local state with db state)
+  const isTypingRef = useRef(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const selectedJob = jobs.find(j => j.id === selectedJobId);
 
+  // Load data ONLY when job selection changes or if we are not typing
   useEffect(() => {
-    if (selectedJob) {
-      // Load existing data and add 5 empty rows at the bottom
+    if (selectedJob && !isTypingRef.current) {
       const existing = selectedJob.productionData.map(d => ({
         ...d,
         grossWeight: d.grossWeight.toString(),
@@ -39,53 +45,36 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
         joints: d.joints.toString(),
         isNew: false
       }));
-      setGridData([...existing, ...generateEmptyRows(5)]);
-    } else {
+      
+      // Only append empty rows if there are none, or append 5 if clean load
+      const neededRows = Math.max(0, 5 - (existing.length % 5)); 
+      // But user logic was "add 5 empty rows at bottom". Let's stick to that logic if list is empty, 
+      // otherwise just ensure we have the existing data.
+      
+      if (gridData.length === 0 || gridData[0]?.id !== existing[0]?.id) {
+           setGridData([...existing, ...generateEmptyRows(5)]);
+      }
+    } else if (!selectedJob) {
       setGridData([]);
     }
-  }, [selectedJob]);
+  }, [selectedJob?.id, selectedJob?.productionData]); // Only trigger if ID or Data changes
 
   const handleJobSelect = (id: string) => {
       setSelectedJobId(id);
       setMobileView('detail');
-  }
-
-  // Handle Cell Change
-  const handleCellChange = (id: string, field: string, value: string) => {
-    setGridData(prev => prev.map(row => {
-      if (row.id === id) {
-        return { ...row, [field]: value };
-      }
-      return row;
-    }));
+      isTypingRef.current = false;
+      setGridData([]); // Clear previous to force reload
   };
 
-  // Toggle Completion Status
-  const toggleCompletion = (currentState: boolean) => {
-      if (!selectedJob) return;
-      
-      // If turning ON, status -> Completed. 
-      // If turning OFF, status -> Running (if has data) or Pending (if no data).
-      const hasData = selectedJob.productionData.length > 0;
-      const newStatus: JobStatus = !currentState ? 'Completed' : (hasData ? 'Running' : 'Pending');
-
-      onUpdateJob({
-          ...selectedJob,
-          productionStatus: newStatus
-      });
-  };
-
-  // Save Function with Logic
-  const handleSave = () => {
-    if (!selectedJob) return;
-
+  // --- CORE LOGIC: Convert Grid to DB Format ---
+  const getFormattedData = (currentGrid: any[]) => {
     // Filter out completely empty new rows
-    const validRows = gridData.filter(row => {
-        if (!row.isNew) return true; // Keep existing rows
+    const validRows = currentGrid.filter(row => {
+        if (!row.isNew) return true; 
         return row.grossWeight !== '' || row.coreWeight !== '' || row.meter !== '';
     });
 
-    const newProductionData: ProductionEntry[] = validRows.map(row => {
+    return validRows.map(row => {
         const gross = parseFloat(row.grossWeight) || 0;
         const core = parseFloat(row.coreWeight) || 0;
         return {
@@ -98,30 +87,93 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
             timestamp: row.timestamp || new Date().toLocaleString(),
         };
     });
+  };
 
-    // Logic: If manual toggle is ON, stay Completed.
-    // Otherwise, if data exists, mark as Running. If no data, Pending.
+  // --- AUTO SAVE FUNCTION ---
+  const triggerAutoSave = useCallback((newData: any[]) => {
+      if (!selectedJob) return;
+
+      if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+      }
+
+      setIsSaving(true);
+
+      saveTimeoutRef.current = setTimeout(() => {
+          const formatted = getFormattedData(newData);
+          
+          // Check status logic
+          const currentIsComplete = selectedJob.productionStatus === 'Completed';
+          const newStatus = currentIsComplete ? 'Completed' : (formatted.length > 0 ? 'Running' : 'Pending');
+
+          onUpdateJob({
+              ...selectedJob,
+              productionData: formatted,
+              productionStatus: newStatus
+          });
+          
+          setIsSaving(false);
+          isTypingRef.current = false; // Release typing lock after save
+      }, 1500); // 1.5 second debounce
+  }, [selectedJob, onUpdateJob]);
+
+  // Handle Cell Change
+  const handleCellChange = (id: string, field: string, value: string) => {
+    isTypingRef.current = true;
+    
+    const newGrid = gridData.map(row => {
+      if (row.id === id) {
+        return { ...row, [field]: value };
+      }
+      return row;
+    });
+
+    setGridData(newGrid);
+    triggerAutoSave(newGrid);
+  };
+
+  // Toggle Completion Status
+  const toggleCompletion = (currentState: boolean) => {
+      if (!selectedJob) return;
+      const hasData = selectedJob.productionData.length > 0;
+      const newStatus: JobStatus = !currentState ? 'Completed' : (hasData ? 'Running' : 'Pending');
+
+      onUpdateJob({
+          ...selectedJob,
+          productionStatus: newStatus
+      });
+  };
+
+  // Manual Save (Immediate)
+  const handleManualSave = () => {
+    if (!selectedJob) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    
+    const formatted = getFormattedData(gridData);
     const currentIsComplete = selectedJob.productionStatus === 'Completed';
-    let newStatus: JobStatus = currentIsComplete ? 'Completed' : (newProductionData.length > 0 ? 'Running' : 'Pending');
+    const newStatus = currentIsComplete ? 'Completed' : (formatted.length > 0 ? 'Running' : 'Pending');
 
     onUpdateJob({ 
         ...selectedJob, 
-        productionData: newProductionData,
+        productionData: formatted,
         productionStatus: newStatus
     });
-    
-    alert(`Data Saved Successfully.`);
+    setIsSaving(false);
+    isTypingRef.current = false;
+    alert(`Data Saved.`);
   };
 
   const addMoreRows = () => {
       setGridData(prev => [...prev, ...generateEmptyRows(5)]);
-  }
+  };
 
   const handleDeleteRow = (id: string) => {
       if(confirm("Delete this row?")) {
-        setGridData(prev => prev.filter(r => r.id !== id));
+        const newGrid = gridData.filter(r => r.id !== id);
+        setGridData(newGrid);
+        triggerAutoSave(newGrid);
       }
-  }
+  };
 
   const isProdComplete = selectedJob?.productionStatus === 'Completed';
 
@@ -184,6 +236,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                             <div className="flex items-baseline gap-2">
                                 <h1 className="text-2xl font-black tracking-tight text-emerald-950">#{selectedJob.srNo}</h1>
                                 <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-sm font-bold font-mono border border-emerald-200">{selectedJob.jobCode}</span>
+                                {isSaving && <span className="text-[10px] flex items-center gap-1 text-emerald-600 animate-pulse font-bold uppercase"><CloudLightning size={12}/> Saving...</span>}
                             </div>
                         </div>
                     </div>
@@ -222,11 +275,11 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                         </div>
 
                         <button 
-                            onClick={handleSave} 
+                            onClick={handleManualSave} 
                             className="flex-1 xl:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm uppercase tracking-wide"
                         >
                             <Save size={16} />
-                            <span>Save Data</span>
+                            <span>Force Save</span>
                         </button>
                     </div>
                 </div>

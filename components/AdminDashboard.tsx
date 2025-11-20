@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { JobCard, JobStatus } from '../types';
 import JobCardForm from './JobCardForm';
-import { Plus, Trash2, Search, Database, Activity, BarChart3, Clock, ChevronDown, ChevronUp, Printer, TrendingUp, AlertTriangle, Calendar, Award, Scale, Layers, Ruler, Weight, FileText } from 'lucide-react';
+import { Plus, Trash2, Search, Database, Activity, BarChart3, Clock, ChevronDown, ChevronUp, Printer, TrendingUp, AlertTriangle, Calendar, Award, Scale, Layers, Ruler, Weight, FileText, PieChart } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
@@ -173,38 +173,69 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
   return (
     <div className="space-y-4 animate-in fade-in duration-500 print:space-y-4 pb-20">
       
-      {/* --- COMPACT METRICS BAR --- */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 no-print">
-         <div className="bg-emerald-50/50 rounded-lg border border-emerald-100 p-3 flex flex-col justify-center relative overflow-hidden">
+      {/* --- COMPACT TOTALS BAR --- */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 no-print">
+         <div className="bg-emerald-50/50 rounded-lg border border-emerald-100 p-3 flex flex-col justify-center relative overflow-hidden hover:shadow-md transition-shadow">
              <div className="flex items-center gap-2 mb-1">
                  <Activity size={14} className="text-emerald-600"/>
-                 <span className="text-[10px] font-bold uppercase text-emerald-700 tracking-wider">Production</span>
+                 <span className="text-[10px] font-bold uppercase text-emerald-700 tracking-wider">Total Production</span>
              </div>
              <span className="text-2xl font-black text-emerald-700 leading-none">{analytics.totalProd.toFixed(0)} <span className="text-xs font-medium">kg</span></span>
          </div>
 
-         <div className="bg-blue-50/50 rounded-lg border border-blue-100 p-3 flex flex-col justify-center relative overflow-hidden">
+         <div className="bg-blue-50/50 rounded-lg border border-blue-100 p-3 flex flex-col justify-center relative overflow-hidden hover:shadow-md transition-shadow">
              <div className="flex items-center gap-2 mb-1">
                  <Database size={14} className="text-blue-600"/>
-                 <span className="text-[10px] font-bold uppercase text-blue-700 tracking-wider">Slitting</span>
+                 <span className="text-[10px] font-bold uppercase text-blue-700 tracking-wider">Total Slitting</span>
              </div>
              <span className="text-2xl font-black text-blue-700 leading-none">{analytics.totalSlit.toFixed(0)} <span className="text-xs font-medium">kg</span></span>
          </div>
 
-         <div className="bg-red-50/50 rounded-lg border border-red-100 p-3 flex flex-col justify-center relative overflow-hidden">
+         <div className="bg-red-50/50 rounded-lg border border-red-100 p-3 flex flex-col justify-center relative overflow-hidden hover:shadow-md transition-shadow">
              <div className="flex items-center gap-2 mb-1">
                  <AlertTriangle size={14} className="text-red-600"/>
-                 <span className="text-[10px] font-bold uppercase text-red-700 tracking-wider">Wastage</span>
+                 <span className="text-[10px] font-bold uppercase text-red-700 tracking-wider">Current Wastage</span>
              </div>
              <span className="text-2xl font-black text-red-600 leading-none">{analytics.totalWastage.toFixed(0)} <span className="text-xs font-medium">kg</span></span>
          </div>
+      </div>
 
-         <div className="bg-white rounded-lg border border-slate-200 p-3 flex flex-col justify-center">
-             <div className="flex items-center gap-2 mb-1">
-                 <Award size={14} className="text-slate-500"/>
-                 <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Top Job</span>
-             </div>
-             <span className="text-lg font-black text-slate-700 leading-none truncate">{analytics.topJob[0]}</span>
+      {/* --- ANALYSIS INSIGHTS --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 no-print">
+         <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm flex items-center justify-between relative overflow-hidden">
+            <div className="absolute right-0 top-0 p-2 opacity-10">
+                <Award size={80} className="text-slate-900" />
+            </div>
+            <div>
+                <div className="flex items-center gap-2 mb-1">
+                    <Award size={16} className="text-amber-500"/>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Top Selling Job Code</span>
+                </div>
+                <div className="flex items-baseline gap-3">
+                     <span className="text-2xl font-black text-slate-800">{analytics.topJob[0]}</span>
+                     <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                        {typeof analytics.topJob[1] === 'number' ? analytics.topJob[1].toFixed(0) : 0} kg
+                     </span>
+                </div>
+            </div>
+         </div>
+
+         <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm flex items-center justify-between relative overflow-hidden">
+            <div className="absolute right-0 top-0 p-2 opacity-10">
+                <PieChart size={80} className="text-blue-900" />
+            </div>
+            <div>
+                <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp size={16} className="text-blue-500"/>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">Top Slitting Size</span>
+                </div>
+                <div className="flex items-baseline gap-3">
+                     <span className="text-2xl font-black text-slate-800">{analytics.topSlitSize[0]}<span className="text-lg text-slate-400 ml-0.5">mm</span></span>
+                     <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                        {typeof analytics.topSlitSize[1] === 'number' ? analytics.topSlitSize[1].toFixed(0) : 0} kg
+                     </span>
+                </div>
+            </div>
          </div>
       </div>
 

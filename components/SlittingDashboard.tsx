@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { JobCard, SlittingEntry, JobStatus } from '../types';
-import { Search, Scissors, Save, ArrowLeft, Plus, Calculator, Trash2, Check } from 'lucide-react';
+import { Search, Scissors, Save, ArrowLeft, Plus, Calculator, Trash2, CloudLightning } from 'lucide-react';
 
 interface SlittingDashboardProps {
   jobs: JobCard[];
@@ -22,31 +22,35 @@ type CoilGridState = Record<string, GridRow[]>;
 const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob }) => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
+  const [isSaving, setIsSaving] = useState(false);
   
   // Separate grid data for each coil
   const [coilGrids, setCoilGrids] = useState<CoilGridState>({});
   
+  // Refs for auto-save
+  const isTypingRef = useRef(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const selectedJob = jobs.find(j => j.id === selectedJobId);
 
-  // Initialize Grids when Job changes
+  // Initialize Grids when Job changes or when not typing
   useEffect(() => {
-    if (selectedJob) {
+    if (selectedJob && !isTypingRef.current) {
       const newGrids: CoilGridState = {};
 
       selectedJob.coils.forEach(coil => {
         // Filter existing data for this coil
         const coilData = selectedJob.slittingData
           .filter(d => d.coilId === coil.id)
-          .sort((a, b) => Number(a.srNo) - Number(b.srNo)); // Sort by SrNo
+          .sort((a, b) => Number(a.srNo) - Number(b.srNo));
 
-        // Find max SrNo to start new rows from
+        // Find max SrNo
         let maxSr = 0;
         coilData.forEach(d => {
            const n = parseInt(d.srNo);
            if (!isNaN(n) && n > maxSr) maxSr = n;
         });
 
-        // Convert existing DB entries to GridRow format
         const existingRows: GridRow[] = coilData.map(d => ({
           id: d.id,
           srNo: d.srNo,
@@ -55,7 +59,6 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
           isNew: false
         }));
 
-        // Generate 5 empty rows
         const emptyRows: GridRow[] = Array(5).fill(null).map((_, i) => ({
           id: crypto.randomUUID(),
           srNo: (maxSr + i + 1).toString(),
@@ -64,81 +67,30 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
           isNew: true
         }));
 
+        // If local state already exists and has modified new rows, be careful not to wipe them
+        // Simplified: Just reload from DB + empties when job changes or refreshed from background
         newGrids[coil.id] = [...existingRows, ...emptyRows];
       });
 
       setCoilGrids(newGrids);
-    } else {
+    } else if (!selectedJob) {
       setCoilGrids({});
     }
-  }, [selectedJob]);
+  }, [selectedJob?.id, selectedJob?.slittingData]);
 
   const handleJobSelect = (id: string) => {
       setSelectedJobId(id);
       setMobileView('detail');
+      isTypingRef.current = false;
+      setCoilGrids({});
   }
 
-  const handleCellChange = (coilId: string, rowId: string, field: keyof GridRow, value: string) => {
-    setCoilGrids(prev => ({
-      ...prev,
-      [coilId]: prev[coilId].map(row => {
-        if (row.id === rowId) {
-          return { ...row, [field]: value };
-        }
-        return row;
-      })
-    }));
-  };
-
-  const handleAddRows = (coilId: string) => {
-    setCoilGrids(prev => {
-      const currentRows = prev[coilId];
-      let maxSr = 0;
-      currentRows.forEach(r => {
-        const n = parseInt(r.srNo);
-        if (!isNaN(n) && n > maxSr) maxSr = n;
-      });
-
-      const newRows = Array(5).fill(null).map((_, i) => ({
-        id: crypto.randomUUID(),
-        srNo: (maxSr + i + 1).toString(),
-        gross: '',
-        core: '',
-        isNew: true
-      }));
-
-      return {
-        ...prev,
-        [coilId]: [...currentRows, ...newRows]
-      };
-    });
-  };
-
-  const handleDeleteRow = (coilId: string, rowId: string) => {
-      setCoilGrids(prev => ({
-          ...prev,
-          [coilId]: prev[coilId].filter(r => r.id !== rowId)
-      }));
-  }
-
-  const toggleCompletion = (currentState: boolean) => {
-      if(!selectedJob) return;
-
-      const hasData = selectedJob.slittingData.length > 0;
-      const newStatus: JobStatus = !currentState ? 'Completed' : (hasData ? 'Running' : 'Pending');
-
-      onUpdateJob({
-          ...selectedJob,
-          slittingStatus: newStatus
-      });
-  }
-
-  const handleSave = () => {
-    if (!selectedJob) return;
-
+  // --- FORMAT DATA FUNCTION ---
+  const getFormattedData = (currentGrids: CoilGridState) => {
+    if (!selectedJob) return [];
     const newSlittingData: SlittingEntry[] = [];
 
-    Object.entries(coilGrids).forEach(([coilId, rows]) => {
+    Object.entries(currentGrids).forEach(([coilId, rows]) => {
       const coilDef = selectedJob.coils.find(c => c.id === coilId);
       if (!coilDef) return;
 
@@ -148,9 +100,10 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
           const core = parseFloat(row.core) || 0;
           const net = gross - core;
           
+          // UPDATED FORMULA: net / micron / 0.00139 / size * 1000
           let meter = 0;
           if (selectedJob.micron > 0 && coilDef.size > 0) {
-             meter = (net / selectedJob.micron / 0.0139 / coilDef.size) * 1000;
+             meter = (net / selectedJob.micron / 0.00139 / coilDef.size) * 1000;
           }
 
           newSlittingData.push({
@@ -161,21 +114,112 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
             coreWeight: core,
             netWeight: net,
             meter: meter,
-            timestamp: new Date().toLocaleString()
+            timestamp: row.isNew ? new Date().toLocaleString() : (selectedJob.slittingData.find(d => d.id === row.id)?.timestamp || new Date().toLocaleString())
           });
         }
       });
     });
+    return newSlittingData;
+  };
 
+  // --- AUTO SAVE ---
+  const triggerAutoSave = useCallback((newGrids: CoilGridState) => {
+    if (!selectedJob) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    
+    setIsSaving(true);
+
+    saveTimeoutRef.current = setTimeout(() => {
+        const formatted = getFormattedData(newGrids);
+        
+        const currentIsComplete = selectedJob.slittingStatus === 'Completed';
+        const newStatus = currentIsComplete ? 'Completed' : (formatted.length > 0 ? 'Running' : 'Pending');
+
+        onUpdateJob({ 
+            ...selectedJob, 
+            slittingData: formatted, 
+            slittingStatus: newStatus 
+        });
+        
+        setIsSaving(false);
+        isTypingRef.current = false;
+    }, 1500);
+  }, [selectedJob, onUpdateJob]);
+
+
+  const handleCellChange = (coilId: string, rowId: string, field: keyof GridRow, value: string) => {
+    isTypingRef.current = true;
+    const newGrids = {
+      ...coilGrids,
+      [coilId]: coilGrids[coilId].map(row => {
+        if (row.id === rowId) {
+          return { ...row, [field]: value };
+        }
+        return row;
+      })
+    };
+    setCoilGrids(newGrids);
+    triggerAutoSave(newGrids);
+  };
+
+  const handleAddRows = (coilId: string) => {
+    const newGrids = { ...coilGrids };
+    const currentRows = newGrids[coilId];
+    
+    let maxSr = 0;
+    currentRows.forEach(r => {
+      const n = parseInt(r.srNo);
+      if (!isNaN(n) && n > maxSr) maxSr = n;
+    });
+
+    const newRows = Array(5).fill(null).map((_, i) => ({
+      id: crypto.randomUUID(),
+      srNo: (maxSr + i + 1).toString(),
+      gross: '',
+      core: '',
+      isNew: true
+    }));
+
+    newGrids[coilId] = [...currentRows, ...newRows];
+    setCoilGrids(newGrids);
+  };
+
+  const handleDeleteRow = (coilId: string, rowId: string) => {
+      const newGrids = {
+          ...coilGrids,
+          [coilId]: coilGrids[coilId].filter(r => r.id !== rowId)
+      };
+      setCoilGrids(newGrids);
+      triggerAutoSave(newGrids);
+  }
+
+  const toggleCompletion = (currentState: boolean) => {
+      if(!selectedJob) return;
+      const hasData = selectedJob.slittingData.length > 0;
+      const newStatus: JobStatus = !currentState ? 'Completed' : (hasData ? 'Running' : 'Pending');
+
+      onUpdateJob({
+          ...selectedJob,
+          slittingStatus: newStatus
+      });
+  }
+
+  const handleManualSave = () => {
+    if (!selectedJob) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+
+    const formatted = getFormattedData(coilGrids);
     const currentIsComplete = selectedJob.slittingStatus === 'Completed';
-    let newStatus: JobStatus = currentIsComplete ? 'Completed' : (newSlittingData.length > 0 ? 'Running' : 'Pending');
+    const newStatus = currentIsComplete ? 'Completed' : (formatted.length > 0 ? 'Running' : 'Pending');
 
     onUpdateJob({ 
         ...selectedJob, 
-        slittingData: newSlittingData, 
+        slittingData: formatted, 
         slittingStatus: newStatus 
     });
-    alert("Slitting Data Saved Successfully!");
+    setIsSaving(false);
+    isTypingRef.current = false;
+    alert("Slitting Data Saved.");
   };
 
   const calculateLiveNet = (gross: string, core: string) => {
@@ -184,14 +228,14 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
     return g - c;
   };
 
+  // UPDATED FORMULA for Display
   const calculateLiveMeter = (net: number, coilSize: number) => {
      if (!selectedJob || selectedJob.micron <= 0 || coilSize <= 0) return 0;
-     return (net / selectedJob.micron / 0.0139 / coilSize) * 1000;
+     // net / micron / 0.00139 / each size * 1000
+     return (net / selectedJob.micron / 0.00139 / coilSize) * 1000;
   };
 
   const isSlitComplete = selectedJob?.slittingStatus === 'Completed';
-
-  // Calculate Automatic Roll Length (Half of Job Per Roll Meter)
   const targetRollLength = selectedJob ? (selectedJob.perRollMeter / 2) : 0;
 
   return (
@@ -256,6 +300,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                             <div className="flex items-baseline gap-2">
                                 <h1 className="text-2xl font-black tracking-tight text-blue-950">#{selectedJob.srNo}</h1>
                                 <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-sm font-bold font-mono border border-blue-200">{selectedJob.jobCode}</span>
+                                {isSaving && <span className="text-[10px] flex items-center gap-1 text-blue-600 animate-pulse font-bold uppercase"><CloudLightning size={12}/> Saving...</span>}
                             </div>
                         </div>
                     </div>
@@ -294,11 +339,11 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                         </div>
 
                         <button 
-                            onClick={handleSave} 
+                            onClick={handleManualSave} 
                             className="flex-1 xl:flex-none bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm uppercase tracking-wide"
                         >
                             <Save size={16} />
-                            <span>Save All</span>
+                            <span>Force Save</span>
                         </button>
                     </div>
                 </div>
