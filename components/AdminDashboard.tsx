@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { JobCard, JobStatus } from '../types';
 import JobCardForm from './JobCardForm';
-import { Plus, Trash2, Search, Database, Activity, BarChart3, Clock, ChevronDown, ChevronUp, Printer, TrendingUp, AlertTriangle, Calendar, Award, Scale, Layers, Ruler, Weight } from 'lucide-react';
+import { Plus, Trash2, Search, Database, Activity, BarChart3, Clock, ChevronDown, ChevronUp, Printer, TrendingUp, AlertTriangle, Calendar, Award, Scale, Layers, Ruler, Weight, FileText } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../services/firebase';
 
@@ -17,6 +17,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedJob, setExpandedJob] = useState<string | null>(null);
+  const [reportView, setReportView] = useState<'daily' | 'monthly'>('daily');
 
   const handleCreateJob = (newJob: JobCard) => {
     onCreateJob(newJob);
@@ -60,6 +61,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
       
       // Datewise Aggregation
       const dateWise: Record<string, { prod: number, slit: number, count: number }> = {};
+      // Monthly Aggregation
+      const monthWise: Record<string, { prod: number, slit: number, count: number }> = {};
 
       let totalProd = 0;
       let totalSlit = 0;
@@ -88,6 +91,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
              const date = d.timestamp.split(',')[0].trim(); 
              if(!dateWise[date]) dateWise[date] = { prod: 0, slit: 0, count: 0 };
              dateWise[date].slit += d.netWeight;
+
+             // Monthly Logic (Approximation based on string)
+             const parts = date.split('/'); // Assume DD/MM/YYYY or MM/DD/YYYY
+             const monthKey = parts.length === 3 ? `${parts[2]}-${parts[1]}` : date.substring(0, 7);
+             if(!monthWise[monthKey]) monthWise[monthKey] = { prod: 0, slit: 0, count: 0 };
+             monthWise[monthKey].slit += d.netWeight;
          });
 
          // Datewise Production Logic
@@ -96,6 +105,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
              if(!dateWise[date]) dateWise[date] = { prod: 0, slit: 0, count: 0 };
              dateWise[date].prod += d.netWeight;
              dateWise[date].count += 1;
+
+             const parts = date.split('/');
+             const monthKey = parts.length === 3 ? `${parts[2]}-${parts[1]}` : date.substring(0, 7);
+             if(!monthWise[monthKey]) monthWise[monthKey] = { prod: 0, slit: 0, count: 0 };
+             monthWise[monthKey].prod += d.netWeight;
+             monthWise[monthKey].count += 1;
          });
       });
 
@@ -110,6 +125,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
           wastage: data.prod - data.slit // Daily specific wastage
       })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
+       // Convert monthly to array
+       const monthReport = Object.entries(monthWise).map(([date, data]) => ({
+        date,
+        ...data,
+        wastage: data.prod - data.slit
+      })).sort().reverse();
+
       return {
           totalProd,
           totalSlit,
@@ -117,7 +139,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
           topJob,
           topProdSize,
           topSlitSize,
-          dateReport
+          dateReport,
+          monthReport
       };
 
   }, [jobs]);
@@ -198,11 +221,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
           />
         </div>
         <button
+            onClick={() => setReportView(prev => prev === 'daily' ? 'monthly' : 'daily')}
+            className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wide transition-colors"
+        >
+            <FileText size={14} />
+            <span className="hidden sm:inline">{reportView === 'daily' ? 'Show Monthly' : 'Show Daily'}</span>
+        </button>
+        <button
             onClick={handlePrint}
             className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md font-bold text-xs uppercase tracking-wide transition-colors"
         >
             <Printer size={14} />
-            <span className="hidden sm:inline">Report</span>
+            <span className="hidden sm:inline">Print</span>
         </button>
         <button
             onClick={() => setShowForm(true)}
@@ -213,37 +243,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
         </button>
       </div>
 
-      {/* --- DATEWISE TABLE (Collapsible or Compact) --- */}
-      {analytics.dateReport.length > 0 && (
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm no-print">
-             <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center gap-2">
-                 <Calendar size={14} className="text-slate-400"/>
-                 <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wide">Daily Production Summary</h3>
+      {/* --- SUMMARY REPORTS --- */}
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm print:border-0 print:shadow-none">
+             <div className="bg-slate-50 px-3 py-2 border-b border-slate-200 flex items-center justify-between">
+                 <div className="flex items-center gap-2">
+                    <Calendar size={14} className="text-slate-400"/>
+                    <h3 className="font-bold text-slate-600 text-xs uppercase tracking-wide">{reportView === 'daily' ? 'Daily' : 'Monthly'} Production Summary</h3>
+                 </div>
              </div>
-             <div className="max-h-40 overflow-y-auto">
+             <div className="max-h-60 overflow-y-auto print:max-h-none">
                  <table className="w-full text-xs text-left">
                      <thead className="bg-slate-50 text-slate-500 font-bold sticky top-0 z-10">
                          <tr>
-                             <th className="px-3 py-1.5 border-b">Date</th>
-                             <th className="px-3 py-1.5 border-b text-emerald-700">Production</th>
-                             <th className="px-3 py-1.5 border-b text-blue-700">Slitting</th>
-                             <th className="px-3 py-1.5 border-b text-red-700">Wastage</th>
+                             <th className="px-3 py-1.5 border-b">{reportView === 'daily' ? 'Date' : 'Month'}</th>
+                             <th className="px-3 py-1.5 border-b text-emerald-700">Production (kg)</th>
+                             <th className="px-3 py-1.5 border-b text-blue-700">Slitting (kg)</th>
+                             <th className="px-3 py-1.5 border-b text-red-700">Wastage (kg)</th>
                          </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-100">
-                         {analytics.dateReport.map((day, idx) => (
+                         {(reportView === 'daily' ? analytics.dateReport : analytics.monthReport).map((item, idx) => (
                              <tr key={idx} className="hover:bg-slate-50">
-                                 <td className="px-3 py-1 font-medium text-slate-700">{day.date}</td>
-                                 <td className="px-3 py-1 font-bold text-emerald-600">{day.prod.toFixed(1)}</td>
-                                 <td className="px-3 py-1 font-bold text-blue-600">{day.slit.toFixed(1)}</td>
-                                 <td className="px-3 py-1 font-bold text-red-600">{day.wastage.toFixed(1)}</td>
+                                 <td className="px-3 py-1 font-medium text-slate-700">{item.date}</td>
+                                 <td className="px-3 py-1 font-bold text-emerald-600">{item.prod.toFixed(1)}</td>
+                                 <td className="px-3 py-1 font-bold text-blue-600">{item.slit.toFixed(1)}</td>
+                                 <td className="px-3 py-1 font-bold text-red-600">{item.wastage.toFixed(1)}</td>
                              </tr>
                          ))}
+                         {(reportView === 'daily' ? analytics.dateReport : analytics.monthReport).length === 0 && (
+                             <tr><td colSpan={4} className="text-center py-2 text-slate-400 italic">No data available</td></tr>
+                         )}
                      </tbody>
                  </table>
              </div>
-        </div>
-      )}
+      </div>
 
       {/* --- COMPACT JOB LIST --- */}
       <div className="grid grid-cols-1 gap-2">
@@ -264,7 +297,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                 return (
                 <div key={job.id} className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden hover:border-slate-400 transition-all break-inside-avoid">
                     {/* Compact Header */}
-                    <div className="p-3 flex flex-col sm:flex-row items-center justify-between gap-2 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleExpand(job.id)}>
+                    <div className="p-3 flex flex-col sm:flex-row items-center justify-between gap-2 cursor-pointer hover:bg-slate-50 transition-colors no-print" onClick={() => toggleExpand(job.id)}>
                         
                         <div className="flex items-center gap-3 w-full sm:w-auto">
                              <div className={`w-1.5 h-8 rounded-full ${job.status === 'Completed' ? 'bg-slate-800' : 'bg-slate-300'}`}></div>
@@ -320,10 +353,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                         <div className="border-t border-slate-200 bg-slate-50/30 p-3 text-sm animate-in slide-in-from-top-1">
                             
                             {/* Full Job Specs Bar */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3 bg-white p-2 rounded border border-slate-200 shadow-sm">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3 bg-white p-2 rounded border border-slate-200 shadow-sm print:grid-cols-4">
                                 <div className="flex flex-col">
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Job Code</span>
-                                    <span className="font-bold text-slate-800">{job.jobCode}</span>
+                                    <span className="font-bold text-slate-800">{job.jobCode} (#{job.srNo})</span>
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Size / Micron</span>
@@ -340,7 +373,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                             </div>
 
                             {/* Summary Stats Row */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3 print:grid-cols-4">
                                  {/* Prod Total */}
                                  <div className="bg-emerald-50 border border-emerald-200 p-2 rounded flex justify-between items-center">
                                      <span className="text-[10px] font-bold text-emerald-600 uppercase">Total Production</span>
@@ -363,7 +396,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                                  </div>
                             </div>
 
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 print:grid-cols-2">
                                 {/* Production Log Table */}
                                 <div className="bg-white border border-slate-200 rounded overflow-hidden">
                                     <div className="bg-emerald-50 px-3 py-1.5 border-b border-emerald-100 flex justify-between items-center">
@@ -372,25 +405,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                                         </h4>
                                         <span className="text-[10px] font-bold text-emerald-600">Count: {job.productionData.length}</span>
                                     </div>
-                                    <div className="overflow-x-auto max-h-60">
-                                        <table className="w-full text-[11px] text-left">
+                                    <div className="overflow-x-auto max-h-60 print:max-h-none">
+                                        <table className="w-full text-[10px] text-left">
                                             <thead className="bg-slate-50 text-slate-500 font-bold sticky top-0 shadow-sm">
                                                 <tr>
                                                     <th className="px-2 py-1.5 border-b">Time</th>
-                                                    <th className="px-2 py-1.5 border-b text-center">Size (mm)</th>
-                                                    <th className="px-2 py-1.5 border-b text-right text-emerald-700">Net Wt (kg)</th>
+                                                    <th className="px-2 py-1.5 border-b text-center">Size</th>
+                                                    <th className="px-2 py-1.5 border-b text-center">Gross</th>
+                                                    <th className="px-2 py-1.5 border-b text-center">Core</th>
+                                                    <th className="px-2 py-1.5 border-b text-right text-emerald-700">Net Wt</th>
                                                     <th className="px-2 py-1.5 border-b text-right">Meter</th>
-                                                    <th className="px-2 py-1.5 border-b text-center">Joints</th>
+                                                    <th className="px-2 py-1.5 border-b text-center">Jnt</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 text-slate-600">
                                                 {job.productionData.length === 0 ? (
-                                                    <tr><td colSpan={5} className="text-center py-4 italic text-slate-400">No production data</td></tr>
+                                                    <tr><td colSpan={7} className="text-center py-4 italic text-slate-400">No production data</td></tr>
                                                 ) : (
                                                     job.productionData.map(d => (
                                                         <tr key={d.id} className="hover:bg-emerald-50/30">
-                                                            <td className="px-2 py-1 font-mono text-[10px]">{d.timestamp.split(',')[1]}</td>
+                                                            <td className="px-2 py-1 font-mono text-[9px]">{d.timestamp.split(',')[1]}</td>
                                                             <td className="px-2 py-1 text-center font-bold text-slate-700">{job.size}</td>
+                                                            <td className="px-2 py-1 text-center text-slate-500">{d.grossWeight.toFixed(3)}</td>
+                                                            <td className="px-2 py-1 text-center text-slate-500">{d.coreWeight.toFixed(3)}</td>
                                                             <td className="px-2 py-1 text-right font-bold text-emerald-700">{d.netWeight.toFixed(3)}</td>
                                                             <td className="px-2 py-1 text-right">{d.meter}</td>
                                                             <td className="px-2 py-1 text-center">{d.joints}</td>
@@ -424,19 +461,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                                             </h4>
                                             <span className="text-[10px] font-bold text-blue-600">Count: {job.slittingData.length}</span>
                                         </div>
-                                        <div className="overflow-x-auto max-h-48">
-                                            <table className="w-full text-[11px] text-left">
+                                        <div className="overflow-x-auto max-h-48 print:max-h-none">
+                                            <table className="w-full text-[10px] text-left">
                                                 <thead className="bg-slate-50 text-slate-500 font-bold sticky top-0 shadow-sm">
                                                     <tr>
                                                         <th className="px-2 py-1.5 border-b">Sr No</th>
-                                                        <th className="px-2 py-1.5 border-b text-center">Size (mm)</th>
-                                                        <th className="px-2 py-1.5 border-b text-right text-blue-700">Net Wt (kg)</th>
+                                                        <th className="px-2 py-1.5 border-b text-center">Size</th>
+                                                        <th className="px-2 py-1.5 border-b text-center">Gross</th>
+                                                        <th className="px-2 py-1.5 border-b text-center">Core</th>
+                                                        <th className="px-2 py-1.5 border-b text-right text-blue-700">Net Wt</th>
                                                         <th className="px-2 py-1.5 border-b text-right">Meter</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100 text-slate-600">
                                                     {job.slittingData.length === 0 ? (
-                                                        <tr><td colSpan={4} className="text-center py-4 italic text-slate-400">No slitting data</td></tr>
+                                                        <tr><td colSpan={6} className="text-center py-4 italic text-slate-400">No slitting data</td></tr>
                                                     ) : (
                                                         job.slittingData.map(d => {
                                                             const coil = job.coils.find(c => c.id === d.coilId);
@@ -444,6 +483,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                                                             <tr key={d.id} className="hover:bg-blue-50/30">
                                                                 <td className="px-2 py-1 font-mono font-bold text-slate-700">{d.srNo}</td>
                                                                 <td className="px-2 py-1 text-center font-bold text-slate-700">{coil ? coil.size : '-'}</td>
+                                                                <td className="px-2 py-1 text-center text-slate-500">{d.grossWeight.toFixed(3)}</td>
+                                                                <td className="px-2 py-1 text-center text-slate-500">{d.coreWeight.toFixed(3)}</td>
                                                                 <td className="px-2 py-1 text-right font-bold text-blue-700">{d.netWeight.toFixed(3)}</td>
                                                                 <td className="px-2 py-1 text-right">{d.meter.toFixed(0)}</td>
                                                             </tr>
