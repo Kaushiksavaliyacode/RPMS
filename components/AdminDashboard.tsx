@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { JobCard, JobStatus } from '../types';
 import JobCardForm from './JobCardForm';
@@ -382,12 +383,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Coil Breakdown (Slitting)</h4>
                                 <div className="flex flex-wrap gap-4">
                                     {coilBreakdown.map(coil => (
-                                        <div key={coil.id} className="flex-1 min-w-[150px] bg-blue-50/30 rounded-lg p-4 border border-blue-100">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-xs font-bold text-blue-900">{coil.label}</span>
-                                                <span className="text-[10px] bg-white px-1.5 py-0.5 rounded text-blue-500 border border-blue-200 font-mono">{coil.size}mm</span>
+                                        <div key={coil.id} className="flex-1 min-w-[180px] bg-blue-50/30 rounded-lg p-4 border border-blue-100">
+                                            <div className="flex flex-col mb-3">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                   <span className="text-2xl font-black text-blue-900">{coil.size}mm</span>
+                                                </div>
+                                                <span className="text-xs font-bold text-blue-500 uppercase tracking-wide">Target Rolls: {coil.totalRolls || '-'}</span>
                                             </div>
-                                            <p className="text-lg font-bold text-blue-700">{coil.weight.toFixed(3)} <span className="text-xs font-normal text-blue-400">kg</span></p>
+                                            <div className="border-t border-blue-100 pt-2 mt-2">
+                                                <p className="text-xs text-slate-400 uppercase tracking-wider">Actual</p>
+                                                <p className="text-lg font-bold text-blue-700">{coil.weight.toFixed(3)} <span className="text-xs font-normal text-blue-400">kg</span></p>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -441,7 +447,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                                             <thead className="text-blue-600/70 font-medium bg-blue-50 sticky top-0">
                                                 <tr>
                                                     <th className="px-2 py-2 rounded-l">Sr No</th>
-                                                    <th className="px-2 py-2">Coil</th>
+                                                    <th className="px-2 py-2">Coil (Size)</th>
                                                     <th className="px-2 py-2">Net Wt</th>
                                                     <th className="px-2 py-2 rounded-r">Meter</th>
                                                 </tr>
@@ -450,14 +456,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
                                                 {job.slittingData.length === 0 ? (
                                                     <tr><td colSpan={4} className="text-center py-6 text-slate-400 italic">No logs yet</td></tr>
                                                 ) : (
-                                                    job.slittingData.map(d => (
+                                                    job.slittingData.map(d => {
+                                                        const coil = job.coils.find(c => c.id === d.coilId);
+                                                        return (
                                                         <tr key={d.id} className="hover:bg-blue-50/30 transition-colors">
                                                             <td className="px-2 py-2.5 font-mono">{d.srNo}</td>
-                                                            <td className="px-2 py-2.5 text-slate-500">{job.coils.find(c => c.id === d.coilId)?.label}</td>
+                                                            <td className="px-2 py-2.5 text-slate-500">{coil ? `${coil.size}mm` : '-'}</td>
                                                             <td className="px-2 py-2.5 font-bold text-blue-700">{d.netWeight.toFixed(3)}</td>
                                                             <td className="px-2 py-2.5 font-mono text-slate-500">{d.meter.toFixed(0)}</td>
                                                         </tr>
-                                                    ))
+                                                    )})
                                                 )}
                                             </tbody>
                                         </table>

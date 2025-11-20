@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { JobCard, CoilDefinition } from '../types';
 import { Plus, Trash2, X, Save, Layers } from 'lucide-react';
@@ -20,14 +21,14 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ onClose, onSubmit }) => {
   });
 
   const [coils, setCoils] = useState<CoilDefinition[]>([
-    { id: 'coil-1', label: 'Coil 1', size: 0 },
-    { id: 'coil-2', label: 'Coil 2', size: 0 },
+    { id: 'coil-1', label: 'Coil 1', size: 0, totalRolls: 0 },
+    { id: 'coil-2', label: 'Coil 2', size: 0, totalRolls: 0 },
   ]);
 
   const handleAddCoil = () => {
     if (coils.length >= 4) return;
     const nextNum = coils.length + 1;
-    setCoils([...coils, { id: `coil-${nextNum}`, label: `Coil ${nextNum}`, size: 0 }]);
+    setCoils([...coils, { id: `coil-${nextNum}`, label: `Coil ${nextNum}`, size: 0, totalRolls: 0 }]);
   };
 
   const handleRemoveCoil = () => {
@@ -35,8 +36,8 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ onClose, onSubmit }) => {
     setCoils(coils.slice(0, -1));
   };
 
-  const handleCoilChange = (id: string, size: string) => {
-    setCoils(coils.map(c => c.id === id ? { ...c, size: Number(size) } : c));
+  const handleCoilChange = (id: string, field: keyof CoilDefinition, value: string) => {
+    setCoils(coils.map(c => c.id === id ? { ...c, [field]: Number(value) } : c));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -201,21 +202,37 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ onClose, onSubmit }) => {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {coils.map((coil, index) => (
                 <div key={coil.id} className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative group">
                   <div className="absolute -top-2 -left-2 w-6 h-6 bg-slate-800 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
                     {index + 1}
                   </div>
-                  <label className="block text-xs font-medium text-slate-500 mb-2 text-center">{coil.label} Size</label>
-                  <input
-                    required
-                    type="number"
-                    value={coil.size || ''}
-                    onChange={e => handleCoilChange(coil.id, e.target.value)}
-                    className="w-full p-2 text-center text-lg font-bold text-slate-800 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                    placeholder="0"
-                  />
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5 text-center">Size (mm)</label>
+                        <input
+                            required
+                            type="number"
+                            value={coil.size || ''}
+                            onChange={e => handleCoilChange(coil.id, 'size', e.target.value)}
+                            className="w-full p-2 text-center text-lg font-bold text-slate-800 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                            placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5 text-center">Total Rolls</label>
+                        <input
+                            required
+                            type="number"
+                            value={coil.totalRolls || ''}
+                            onChange={e => handleCoilChange(coil.id, 'totalRolls', e.target.value)}
+                            className="w-full p-2 text-center text-lg font-bold text-slate-800 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                            placeholder="0"
+                        />
+                      </div>
+                  </div>
                 </div>
               ))}
             </div>

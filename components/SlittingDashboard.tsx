@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { JobCard, SlittingEntry, JobStatus } from '../types';
 import { Search, Scissors, Save, ArrowLeft, Plus, Calculator, Trash2, Check } from 'lucide-react';
@@ -190,6 +191,9 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
 
   const isSlitComplete = selectedJob?.slittingStatus === 'Completed';
 
+  // Calculate Automatic Roll Length (Half of Job Per Roll Meter)
+  const targetRollLength = selectedJob ? (selectedJob.perRollMeter / 2) : 0;
+
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-5rem)] relative bg-slate-50 font-sans">
        {/* Sidebar - Job Selection */}
@@ -259,8 +263,8 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                     {/* Job Specs Stats */}
                     <div className="flex flex-wrap items-center gap-4 sm:gap-8 w-full xl:w-auto bg-white xl:bg-transparent p-3 xl:p-0 rounded-lg border border-blue-100 xl:border-0">
                          <div className="flex flex-col">
-                             <span className="uppercase text-[10px] font-bold text-blue-400 tracking-wider">Width</span>
-                             <span className="text-blue-900 font-bold text-sm">{selectedJob.size}<span className="text-xs font-normal text-blue-600 ml-0.5">mm</span></span>
+                             <span className="uppercase text-[10px] font-bold text-blue-400 tracking-wider">Target Length (Half)</span>
+                             <span className="text-blue-900 font-bold text-sm">{targetRollLength}<span className="text-xs font-normal text-blue-600 ml-0.5">m</span></span>
                          </div>
                          <div className="w-px h-6 bg-blue-200"></div>
                          <div className="flex flex-col">
@@ -269,7 +273,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                          </div>
                          <div className="w-px h-6 bg-blue-200"></div>
                          <div className="flex flex-col">
-                             <span className="uppercase text-[10px] font-bold text-blue-400 tracking-wider">Target</span>
+                             <span className="uppercase text-[10px] font-bold text-blue-400 tracking-wider">Total Qty</span>
                              <span className="text-blue-900 font-bold text-sm">{selectedJob.totalQuantity}<span className="text-xs font-normal text-blue-600 ml-0.5">kg</span></span>
                          </div>
                     </div>
@@ -319,8 +323,15 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                              {index + 1}
                                          </div>
                                          <div>
-                                             <h3 className="font-bold text-slate-800 text-sm">{coil.label}</h3>
-                                             <span className="text-xs text-slate-400 font-medium">Target Size: {coil.size}mm</span>
+                                             <h3 className="font-black text-slate-800 text-lg leading-tight">{coil.size}mm</h3>
+                                             <div className="flex items-center gap-3 mt-1">
+                                                 <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                                     Rolls: {coil.totalRolls || 0}
+                                                 </span>
+                                                 <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                                     Len: {targetRollLength}m
+                                                 </span>
+                                             </div>
                                          </div>
                                      </div>
                                      <div className="text-right">

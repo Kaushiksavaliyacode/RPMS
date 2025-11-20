@@ -1,3 +1,4 @@
+
 export type Department = 'ADMIN' | 'PRODUCTION' | 'SLITTING';
 
 export type JobStatus = 'Pending' | 'Running' | 'Completed';
@@ -26,7 +27,8 @@ export interface SlittingEntry {
 export interface CoilDefinition {
   id: string;
   label: string; 
-  size: number; 
+  size: number;
+  totalRolls: number; // Added field for target rolls count
 }
 
 export interface JobCard {
