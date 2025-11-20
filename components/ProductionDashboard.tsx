@@ -52,13 +52,6 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
       setMobileView('detail');
   }
 
-  const handleStatusChange = (jobId: string, status: JobCard['status']) => {
-    const jobToUpdate = jobs.find(j => j.id === jobId);
-    if (jobToUpdate) {
-        onUpdateJob({ ...jobToUpdate, status });
-    }
-  };
-
   // Handle Cell Change
   const handleCellChange = (id: string, field: string, value: string) => {
     setGridData(prev => prev.map(row => {
@@ -69,7 +62,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
     }));
   };
 
-  // Save Function
+  // Save Function with Automated Status Logic
   const handleSave = () => {
     if (!selectedJob) return;
 
@@ -93,12 +86,17 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
         };
     });
 
-    // Sort by timestamp (newest on top usually, but for excel we might keep order)
-    // For now, we just save the array as is.
-    onUpdateJob({ ...selectedJob, productionData: newProductionData });
-    alert("Data Saved Successfully!");
+    // AUTOMATED STATUS LOGIC
+    // If data exists -> Completed. If no data -> Pending.
+    const newStatus = newProductionData.length > 0 ? 'Completed' : 'Pending';
+
+    onUpdateJob({ 
+        ...selectedJob, 
+        productionData: newProductionData,
+        status: newStatus
+    });
     
-    // Re-init with 5 fresh rows at bottom if needed, but useEffect handles sync
+    alert(`Data Saved! Job marked as ${newStatus}.`);
   };
 
   const addMoreRows = () => {
@@ -112,9 +110,9 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-5rem)] relative bg-slate-50">
+    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-5rem)] relative bg-slate-50 font-sans">
       {/* Job List Sidebar */}
-      <div className={`w-full lg:w-1/4 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-full lg:flex ${mobileView === 'detail' ? 'hidden' : 'flex'}`}>
+      <div className={`w-full lg:w-80 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden shrink-0 h-full lg:flex ${mobileView === 'detail' ? 'hidden' : 'flex'}`}>
         <div className="p-4 border-b border-slate-100 bg-slate-50">
           <h2 className="font-bold text-slate-800 mb-2">Production Jobs</h2>
           <div className="relative">
@@ -131,68 +129,76 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
             <div
               key={job.id}
               onClick={() => handleJobSelect(job.id)}
-              className={`p-3 rounded-lg cursor-pointer border transition-all ${
+              className={`p-4 rounded-xl cursor-pointer border transition-all ${
                 selectedJobId === job.id
-                  ? 'bg-indigo-50 border-indigo-500 shadow-sm'
-                  : 'bg-white border-slate-200 hover:border-indigo-300'
+                  ? 'bg-indigo-50 border-indigo-500 shadow-md transform scale-[1.02]'
+                  : 'bg-white border-slate-100 hover:border-indigo-300 hover:bg-slate-50'
               }`}
             >
-              <div className="flex justify-between items-center mb-1">
-                  <span className="font-bold text-slate-800">#{job.srNo}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase font-bold ${
-                      job.status === 'Running' ? 'bg-amber-100 text-amber-700' : 
-                      job.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+              <div className="flex justify-between items-center mb-2">
+                  <span className="font-black text-lg text-slate-800">#{job.srNo}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold border ${
+                      job.status === 'Running' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                      job.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-200'
                   }`}>{job.status}</span>
               </div>
-              <p className="text-xs text-slate-500 truncate">{job.jobCode}</p>
+              <p className="text-xs font-bold text-slate-500 truncate">{job.jobCode}</p>
+              <div className="flex gap-2 mt-2">
+                   <span className="text-[10px] border border-slate-200 px-1.5 py-0.5 rounded bg-white text-slate-500 font-medium">{job.size}mm</span>
+                   <span className="text-[10px] border border-slate-200 px-1.5 py-0.5 rounded bg-white text-slate-500 font-medium">{job.micron}µ</span>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Main Grid Area */}
-      <div className={`w-full lg:w-3/4 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden relative lg:flex ${mobileView === 'list' ? 'hidden' : 'flex'}`}>
+      <div className={`flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden relative ${mobileView === 'list' ? 'hidden' : 'flex'}`}>
         {selectedJob ? (
           <>
-            {/* Header */}
-            <div className="p-3 border-b border-slate-200 bg-white flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
-               <div className="flex items-center gap-3 w-full sm:w-auto">
-                   <button onClick={() => setMobileView('list')} className="lg:hidden p-2 bg-slate-100 rounded-lg">
-                       <ArrowLeft size={18} />
-                   </button>
-                   <div>
-                       <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                           #{selectedJob.srNo} <span className="text-sm font-medium text-slate-500">({selectedJob.jobCode})</span>
-                       </h2>
-                       <div className="flex gap-4 text-xs text-slate-500">
-                           <span>Size: <b>{selectedJob.size}mm</b></span>
-                           <span>Micron: <b>{selectedJob.micron}µ</b></span>
-                           <span>Target: <b>{selectedJob.totalQuantity}kg</b></span>
-                       </div>
-                   </div>
-               </div>
-               
-               <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <div className="flex bg-slate-100 p-1 rounded-lg mr-2">
-                        {(['Pending', 'Running', 'Completed'] as const).map((s) => (
-                            <button
-                                key={s}
-                                onClick={() => handleStatusChange(selectedJob.id, s)}
-                                className={`px-3 py-1 text-xs font-bold rounded transition-all ${
-                                    selectedJob.status === s
-                                    ? 'bg-white text-indigo-600 shadow-sm'
-                                    : 'text-slate-400'
-                                }`}
-                            >
-                                {s}
-                            </button>
-                        ))}
+            {/* STATUS BAR HEADER (Sticky) */}
+             <div className="bg-slate-900 text-white p-3 sm:p-4 sticky top-0 z-30 shadow-md shrink-0">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <button onClick={() => setMobileView('list')} className="lg:hidden p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+                            <ArrowLeft size={20} className="text-white" />
+                        </button>
+                        <div>
+                            <div className="flex items-baseline gap-2">
+                                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">#{selectedJob.srNo}</h1>
+                                <span className="text-indigo-400 font-bold font-mono text-sm">{selectedJob.jobCode}</span>
+                            </div>
+                        </div>
                     </div>
-                   <button onClick={handleSave} className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20">
-                       <Save size={16} /> Save Data
-                   </button>
-               </div>
-            </div>
+
+                    {/* Job Specs Stats */}
+                    <div className="flex flex-wrap gap-2 sm:gap-6 text-xs sm:text-sm text-slate-300 w-full sm:w-auto bg-white/5 p-2 rounded-lg sm:bg-transparent sm:p-0">
+                         <div className="flex flex-col sm:block">
+                             <span className="uppercase text-[10px] font-bold text-slate-500 sm:text-slate-400 sm:mr-1">Total Width</span>
+                             <b className="text-white text-base">{selectedJob.size}</b> <span className="text-xs">mm</span>
+                         </div>
+                         <div className="w-px h-8 bg-white/10 hidden sm:block"></div>
+                         <div className="flex flex-col sm:block">
+                             <span className="uppercase text-[10px] font-bold text-slate-500 sm:text-slate-400 sm:mr-1">Micron</span>
+                             <b className="text-white text-base">{selectedJob.micron}</b> <span className="text-xs">µ</span>
+                         </div>
+                         <div className="w-px h-8 bg-white/10 hidden sm:block"></div>
+                         <div className="flex flex-col sm:block">
+                             <span className="uppercase text-[10px] font-bold text-slate-500 sm:text-slate-400 sm:mr-1">Target</span>
+                             <b className="text-white text-base">{selectedJob.totalQuantity}</b> <span className="text-xs">kg</span>
+                         </div>
+                    </div>
+
+                    <button 
+                        onClick={handleSave} 
+                        className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-indigo-500/30 flex items-center justify-center gap-2 transition-all active:scale-95"
+                    >
+                        <Save size={18} />
+                        <span>Save & Complete</span>
+                    </button>
+                </div>
+             </div>
 
             {/* Excel Grid Container */}
             <div className="flex-1 overflow-auto bg-slate-50 relative">
@@ -226,7 +232,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                                             type="number" step="0.001"
                                             value={row.grossWeight}
                                             onChange={(e) => handleCellChange(row.id, 'grossWeight', e.target.value)}
-                                            className="w-full h-full p-2 outline-none text-sm font-medium text-slate-900 bg-transparent focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                                            className="w-full h-full p-2 outline-none text-sm font-medium text-slate-900 bg-transparent focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-center"
                                             placeholder="0.000"
                                         />
                                     </div>
@@ -235,11 +241,11 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                                             type="number" step="0.001"
                                             value={row.coreWeight}
                                             onChange={(e) => handleCellChange(row.id, 'coreWeight', e.target.value)}
-                                            className="w-full h-full p-2 outline-none text-sm font-medium text-slate-900 bg-transparent focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                                            className="w-full h-full p-2 outline-none text-sm font-medium text-slate-900 bg-transparent focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-center"
                                             placeholder="0.000"
                                         />
                                     </div>
-                                    <div className={`col-span-2 border-r border-slate-100 bg-indigo-50/10 p-2 flex items-center text-sm font-mono ${netClass}`}>
+                                    <div className={`col-span-2 border-r border-slate-100 bg-indigo-50/10 p-2 flex items-center justify-center text-sm font-mono ${netClass}`}>
                                         {net > 0 ? net.toFixed(3) : '-'}
                                     </div>
                                     <div className="col-span-2 border-r border-slate-100 relative">
@@ -247,7 +253,7 @@ const ProductionDashboard: React.FC<ProductionDashboardProps> = ({ jobs, onUpdat
                                             type="number"
                                             value={row.meter}
                                             onChange={(e) => handleCellChange(row.id, 'meter', e.target.value)}
-                                            className="w-full h-full p-2 outline-none text-sm font-medium text-slate-900 bg-transparent focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-500"
+                                            className="w-full h-full p-2 outline-none text-sm font-medium text-slate-900 bg-transparent focus:bg-white focus:ring-2 focus:ring-inset focus:ring-indigo-500 text-center"
                                             placeholder="0"
                                         />
                                     </div>
