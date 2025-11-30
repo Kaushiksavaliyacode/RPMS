@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, JobCard } from './types';
 import { subscribeToJobs, addJob, updateJob, deleteJob } from './services/storage';
@@ -5,6 +6,7 @@ import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
 import ProductionDashboard from './components/ProductionDashboard';
 import SlittingDashboard from './components/SlittingDashboard';
+import { InstallPWA } from './components/InstallPWA';
 import { LogOut, Hexagon, Cloud, CloudOff, Wifi } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -26,7 +28,12 @@ const App: React.FC = () => {
   const handleDeleteJob = (jobId: string) => deleteJob(jobId);
 
   if (!user || !user.isAuthenticated) {
-    return <Login onLogin={setUser} />;
+    return (
+      <>
+        <Login onLogin={setUser} />
+        <InstallPWA />
+      </>
+    );
   }
 
   const renderDashboard = () => {
@@ -62,6 +69,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-[100dvh] bg-slate-50 flex flex-col font-sans">
+      <InstallPWA />
       <header className={`${getHeaderColor()} text-white shadow-md sticky top-0 z-30 transition-colors duration-300 no-print shrink-0`}>
         <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-4">
