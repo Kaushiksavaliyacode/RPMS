@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { User, JobCard } from './types';
 import { subscribeToJobs, addJob, updateJob, deleteJob } from './services/storage';
@@ -6,14 +5,15 @@ import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
 import ProductionDashboard from './components/ProductionDashboard';
 import SlittingDashboard from './components/SlittingDashboard';
-import { LogOut, Hexagon, Cloud, CloudOff } from 'lucide-react';
+import { LogOut, Hexagon, Cloud, CloudOff, Wifi } from 'lucide-react';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [jobs, setJobs] = useState<JobCard[]>([]);
-  const [isConnected, setIsConnected] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    // setIsConnected(false) initially, will become true when data loads
     const unsubscribe = subscribeToJobs((liveData) => {
       setJobs(liveData);
       setIsConnected(true);
@@ -72,9 +72,9 @@ const App: React.FC = () => {
             <div>
               <h1 className="text-lg font-bold leading-none tracking-tight flex items-center gap-2">
                 Reliance PMS
-                <span className="flex items-center gap-1 text-[10px] bg-white/10 border border-white/20 px-1.5 py-0.5 rounded uppercase tracking-wider font-bold text-white/90">
+                <span className={`flex items-center gap-1 text-[10px] border px-1.5 py-0.5 rounded uppercase tracking-wider font-bold ${isConnected ? 'bg-blue-500/20 border-blue-300/30 text-white' : 'bg-red-500/20 border-red-300/30 text-red-100'}`}>
                    {isConnected ? <Cloud size={10} /> : <CloudOff size={10} />} 
-                   {isConnected ? 'Local' : 'Offline'}
+                   {isConnected ? 'Cloud' : 'Offline'}
                 </span>
               </h1>
               <span className="text-xs text-white/70 font-medium tracking-wide uppercase">{user.role} Portal</span>

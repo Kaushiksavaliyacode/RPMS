@@ -1,74 +1,80 @@
 
 import { JobCard } from '../types';
+import { db } from './firebase';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  query, 
+  orderBy,
+  getDocs,
+  writeBatch
+} from 'firebase/firestore';
 
-const STORAGE_KEY = 'reliance-pms-jobs';
-
-// --- Helper to get jobs ---
-const getLocalJobs = (): JobCard[] => {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch (e) {
-    console.error("Error parsing jobs from local storage", e);
-    return [];
-  }
-};
-
-// --- Helper to save jobs ---
-const saveLocalJobs = (jobs: JobCard[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
-  // Dispatch event for other components in same tab
-  window.dispatchEvent(new Event('local-storage-update'));
-};
-
-// --- Real-time Listener (Cross-tab & Local) ---
+// --- Real-time Listener (Firebase) ---
 export const subscribeToJobs = (onDataChange: (jobs: JobCard[]) => void) => {
-  // Initial load
-  onDataChange(getLocalJobs());
-
-  // Listener for changes in other tabs (Browser native event)
-  const handleStorageChange = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEY) {
-      onDataChange(getLocalJobs());
-    }
-  };
-
-  // Listener for changes in current tab (Custom event)
-  const handleLocalUpdate = () => {
-    onDataChange(getLocalJobs());
-  };
-
-  window.addEventListener('storage', handleStorageChange);
-  window.addEventListener('local-storage-update', handleLocalUpdate);
+  
+  const q = query(collection(db, "jobs"), orderBy("createdAt", "desc"));
+  
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const jobs = snapshot.docs.map(doc => doc.data() as JobCard);
+    onDataChange(jobs);
+  }, (error) => {
+    console.error("Firebase subscription error:", error);
+  });
 
   return () => {
-    window.removeEventListener('storage', handleStorageChange);
-    window.removeEventListener('local-storage-update', handleLocalUpdate);
+    unsubscribe();
   };
 };
 
 // --- CRUD Operations ---
 
 export const addJob = async (job: JobCard) => {
-  const jobs = getLocalJobs();
-  if (jobs.find(j => j.id === job.id)) return;
-  const newJobs = [job, ...jobs];
-  saveLocalJobs(newJobs);
+  try {
+    await setDoc(doc(db, "jobs", job.id), job);
+  } catch (error) {
+    console.error('Error adding job to Firebase:', error);
+    alert('Failed to save job to cloud.');
+  }
 };
 
 export const updateJob = async (updatedJob: JobCard) => {
-  const jobs = getLocalJobs();
-  const newJobs = jobs.map(j => j.id === updatedJob.id ? updatedJob : j);
-  saveLocalJobs(newJobs);
+  try {
+    const jobRef = doc(db, "jobs", updatedJob.id);
+    await updateDoc(jobRef, updatedJob as any);
+  } catch (error) {
+    console.error('Error updating job in Firebase:', error);
+  }
 };
 
 export const deleteJob = async (jobId: string) => {
-  const jobs = getLocalJobs();
-  const newJobs = jobs.filter(j => j.id !== jobId);
-  saveLocalJobs(newJobs);
+  try {
+    await deleteDoc(doc(db, "jobs", jobId));
+  } catch (error) {
+    console.error('Error deleting job from Firebase:', error);
+  }
 };
 
 export const clearDatabase = async () => {
-    localStorage.removeItem(STORAGE_KEY);
-    window.dispatchEvent(new Event('local-storage-update'));
+  try {
+    const q = query(collection(db, "jobs"));
+    const snapshot = await getDocs(q);
+    
+    // Firestore batches allow up to 500 operations. 
+    // If there are more than 500 docs, this would need to be chunked.
+    // For this app scale, a single batch is likely sufficient for a reset.
+    const batch = writeBatch(db);
+    
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.error('Error clearing database:', error);
+  }
 };
