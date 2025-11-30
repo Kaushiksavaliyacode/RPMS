@@ -1,72 +1,74 @@
 
-import { db } from './firebase';
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  onSnapshot, 
-  query, 
-  orderBy 
-} from 'firebase/firestore';
 import { JobCard } from '../types';
 
-const COLLECTION_NAME = 'jobs';
+const STORAGE_KEY = 'reliance-pms-jobs';
 
-// --- Real-time Listener ---
+// --- Helper to get jobs ---
+const getLocalJobs = (): JobCard[] => {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    console.error("Error parsing jobs from local storage", e);
+    return [];
+  }
+};
+
+// --- Helper to save jobs ---
+const saveLocalJobs = (jobs: JobCard[]) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(jobs));
+  // Dispatch event for other components in same tab
+  window.dispatchEvent(new Event('local-storage-update'));
+};
+
+// --- Real-time Listener (Cross-tab & Local) ---
 export const subscribeToJobs = (onDataChange: (jobs: JobCard[]) => void) => {
-  // Ensure DB is initialized before querying
-  if (!db) return () => {};
+  // Initial load
+  onDataChange(getLocalJobs());
 
-  const q = query(collection(db, COLLECTION_NAME), orderBy('createdAt', 'desc'));
-  
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const jobs: JobCard[] = [];
-    snapshot.forEach((doc) => {
-      jobs.push(doc.data() as JobCard);
-    });
-    onDataChange(jobs);
-  }, (error) => {
-    console.error("Error fetching live data:", error);
-    // Common error: Missing permissions (Rules) or Invalid Config
-    if (error.code === 'permission-denied') {
-      alert("Database Permission Denied. Please ensure your Firestore Security Rules are set to test mode (allow read, write: if true;).");
+  // Listener for changes in other tabs (Browser native event)
+  const handleStorageChange = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY) {
+      onDataChange(getLocalJobs());
     }
-  });
+  };
 
-  return unsubscribe;
+  // Listener for changes in current tab (Custom event)
+  const handleLocalUpdate = () => {
+    onDataChange(getLocalJobs());
+  };
+
+  window.addEventListener('storage', handleStorageChange);
+  window.addEventListener('local-storage-update', handleLocalUpdate);
+
+  return () => {
+    window.removeEventListener('storage', handleStorageChange);
+    window.removeEventListener('local-storage-update', handleLocalUpdate);
+  };
 };
 
 // --- CRUD Operations ---
 
-export const addJobToFirebase = async (job: JobCard) => {
-  try {
-    await setDoc(doc(db, COLLECTION_NAME, job.id), job);
-  } catch (e) {
-    console.error("Error adding job:", e);
-    alert("Failed to save to cloud. Check internet connection or API Keys.");
-  }
+export const addJob = async (job: JobCard) => {
+  const jobs = getLocalJobs();
+  if (jobs.find(j => j.id === job.id)) return;
+  const newJobs = [job, ...jobs];
+  saveLocalJobs(newJobs);
 };
 
-export const updateJobInFirebase = async (job: JobCard) => {
-  try {
-    const jobRef = doc(db, COLLECTION_NAME, job.id);
-    await updateDoc(jobRef, { ...job });
-  } catch (e) {
-    console.error("Error updating job:", e);
-  }
+export const updateJob = async (updatedJob: JobCard) => {
+  const jobs = getLocalJobs();
+  const newJobs = jobs.map(j => j.id === updatedJob.id ? updatedJob : j);
+  saveLocalJobs(newJobs);
 };
 
-export const deleteJobFromFirebase = async (jobId: string) => {
-  try {
-    await deleteDoc(doc(db, COLLECTION_NAME, jobId));
-  } catch (e) {
-    console.error("Error deleting job:", e);
-  }
+export const deleteJob = async (jobId: string) => {
+  const jobs = getLocalJobs();
+  const newJobs = jobs.filter(j => j.id !== jobId);
+  saveLocalJobs(newJobs);
 };
 
-// Deprecated but kept for type compatibility if needed
-export const getStoredJobs = (): JobCard[] => [];
-export const saveStoredJobs = (jobs: JobCard[]) => {};
-export const initializeDemoData = () => [];
+export const clearDatabase = async () => {
+    localStorage.removeItem(STORAGE_KEY);
+    window.dispatchEvent(new Event('local-storage-update'));
+};

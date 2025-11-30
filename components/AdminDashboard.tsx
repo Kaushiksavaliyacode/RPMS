@@ -3,8 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { JobCard, JobStatus } from '../types';
 import JobCardForm from './JobCardForm';
 import { Plus, Trash2, Search, Database, Activity, BarChart3, Clock, ChevronDown, ChevronUp, Printer, TrendingUp, AlertTriangle, Calendar, Award, Scale, Layers, Ruler, Weight, FileText, PieChart } from 'lucide-react';
-import { deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../services/firebase';
+import { clearDatabase } from '../services/storage';
 
 interface AdminDashboardProps {
   jobs: JobCard[];
@@ -31,11 +30,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
   };
 
   const handleSystemReset = async () => {
-      if(confirm("DANGER: This will delete ALL job cards from the database. Are you sure?")) {
-        const jobsRef = jobs.map(j => j.id);
-        for(const id of jobsRef) {
-            await deleteDoc(doc(db, 'jobs', id));
-        }
+      if(confirm("DANGER: This will delete ALL job cards from the Local Storage. Are you sure?")) {
+        await clearDatabase();
         alert("System Database Cleared.");
       }
   }

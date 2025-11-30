@@ -1,3 +1,4 @@
+
 {
   "name": "reliance-pms",
   "private": true,
@@ -9,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "firebase": "^10.8.1",
     "lucide-react": "^0.344.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
@@ -19,7 +19,6 @@
     "@types/react-dom": "^18.2.21",
     "@vitejs/plugin-react": "^4.2.1",
     "typescript": "^5.2.2",
-    "vite": "^5.1.4",
-    "vite-plugin-pwa": "^0.19.2"
+    "vite": "^5.1.4"
   }
 }

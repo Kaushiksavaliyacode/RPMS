@@ -27,7 +27,7 @@ export interface SlittingEntry {
 export interface CoilDefinition {
   id: string;
   size: number;
-  totalRolls: number; // Target rolls count
+  totalRolls: number;
 }
 
 export interface JobCard {
@@ -42,10 +42,8 @@ export interface JobCard {
   note: string;
   coils: CoilDefinition[]; 
   
-  // Overall status (Derived)
+  // Statuses
   status: JobStatus;
-  
-  // Department specific statuses
   productionStatus: JobStatus;
   slittingStatus: JobStatus;
 
