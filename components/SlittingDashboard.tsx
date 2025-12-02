@@ -37,19 +37,18 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
   // App Config State
   const [appConfig, setAppConfig] = useState({
       append: true,
-      includeHeaders: false,
-      autoSync: false, // New: Live Sync
+      includeHeaders: true,
+      autoSync: false, 
       columnNames: {
-          jobNo: 'JobNo',
-          jobCode: 'JobCode',
+          srNo: 'Roll No.',
+          date: 'Date',
           size: 'Size',
-          micron: 'Micron',
-          srNo: 'RollNo',
-          gross: 'GrossWt',
-          core: 'CoreWt',
-          net: 'NetWt',
           meter: 'Meter',
-          date: 'Date'
+          micron: 'Micron',
+          gross: 'Gross Wt.',
+          core: 'Core Wt',
+          net: 'Net Wt',
+          party: 'Party Name'
       }
   });
 
@@ -139,9 +138,9 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       const cols = appConfig.columnNames;
       let csvContent = "";
       
-      // Header
+      // Header - Exact Order: Roll No, Date, Size, Meter, Micron, Gross, Core, Net, Party
       if (appConfig.includeHeaders) {
-          csvContent += `${cols.jobNo},${cols.jobCode},${cols.size},${cols.micron},${cols.srNo},${cols.gross},${cols.core},${cols.net},${cols.meter},${cols.date}\r\n`;
+          csvContent += `${cols.srNo},${cols.date},${cols.size},${cols.meter},${cols.micron},${cols.gross},${cols.core},${cols.net},${cols.party}\r\n`;
       }
 
       Object.entries(grids).forEach(([coilId, rows]) => {
@@ -163,9 +162,16 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                      meter = (net / selectedJob.micron / 0.00139 / coilDef.size) * 1000;
                   }
                   
-                  const date = selectedJob.slittingData.find(d => d.id === row.id)?.timestamp || new Date().toLocaleDateString();
+                  let dateStr = new Date().toLocaleDateString();
+                  if (selectedJob.slittingData) {
+                      const saved = selectedJob.slittingData.find(d => d.id === row.id);
+                      if (saved) dateStr = saved.timestamp.split(',')[0];
+                  }
 
-                  const csvRow = `${selectedJob.srNo},${selectedJob.jobCode},${coilDef.size},${selectedJob.micron},${row.srNo},${gross.toFixed(3)},${core.toFixed(3)},${net.toFixed(3)},${meter.toFixed(0)},${date.replace(/,/g, '')}`;
+                  // Party Name mapped to Job Code
+                  const partyName = selectedJob.jobCode;
+
+                  const csvRow = `${row.srNo},"${dateStr}",${coilDef.size},${meter.toFixed(0)},${selectedJob.micron},${gross.toFixed(3)},${core.toFixed(3)},${net.toFixed(3)},"${partyName}"`;
                   csvContent += csvRow + "\r\n";
               }
           });
@@ -178,21 +184,9 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       if (!fileHandle || !appConfig.autoSync) return;
       
       try {
-          // If auto-sync, we generally overwrite the whole file with current job data 
-          // OR we append. Appending on every keypress is bad.
-          // For Auto-Sync in "Database Mode", we usually want the file to reflect the CURRENT State.
-          // However, user setup is "Append Mode" for BarTender history.
-          // Writing on every keystroke in Append Mode = Duplicates.
-          // Writing on every keystroke in Overwrite Mode = Clean DB.
-          
-          // DECISION: Auto-Sync only works safely if we OVERWRITE the file with the current Job's data
-          // so BarTender always sees the latest state of THIS job.
           const content = generateCSV(grids); // All valid rows
-          
-          // We check permission silently. If fails, we can't sync.
-          // Note: verifyPermission might trigger prompt if not already granted.
           if (isPermissionGranted) {
-               await writeToLocalFile(fileHandle, content, false); // False = Overwrite, not append
+               await writeToLocalFile(fileHandle, content, false); // Overwrite for auto-sync
           }
       } catch (e) {
           console.warn("Auto-sync failed", e);
@@ -280,7 +274,6 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
 
   const handleConnectFile = async () => {
     try {
-      // If we already have a handle but just need permission
       if (fileHandle && !isPermissionGranted) {
           const permitted = await verifyPermission(fileHandle, true);
           if (permitted) {
@@ -289,8 +282,6 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
               return;
           }
       }
-
-      // Otherwise open new picker
       const handle = await openLocalFile();
       setFileHandle(handle);
       setIsPermissionGranted(true);
@@ -314,11 +305,17 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       if (fileHandle) {
           try {
              await writeToLocalFile(fileHandle, csvContent, appConfig.append);
-             alert(`Successfully wrote data to local file.`);
-          } catch (e) {
+             alert(`Data written to packing.csv`);
+          } catch (e: any) {
              console.error("Write failed", e);
-             alert("Failed to write. Click 'Verify Connection' and try again.");
-             setIsPermissionGranted(false);
+             if (e.name === 'NotAllowedError') {
+                 alert("Permission needed. Click 'Verify Connection' button.");
+                 setIsPermissionGranted(false);
+             } else if (e.message && e.message.includes("lock")) {
+                 alert("FILE LOCKED: Please close packing.csv in Excel!");
+             } else {
+                 alert("Write failed. Please close the file in Excel.");
+             }
           }
       } else {
           // Fallback Download
@@ -326,15 +323,13 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
           const link = document.createElement("a");
           const url = URL.createObjectURL(blob);
           link.setAttribute("href", url);
-          link.setAttribute("download", `PackingList_${selectedJob.srNo}.csv`);
+          link.setAttribute("download", `packing.csv`);
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
       }
   };
 
-  // ... (Row Helper Methods Same as before: handleAddRows, handleDeleteRow, toggleCompletion, handleManualSave, etc.)
-  
   const handleAddRows = (coilId: string) => {
     const newGrids = { ...coilGrids };
     const currentRows = newGrids[coilId];
@@ -753,7 +748,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                <div>
                                    <h4 className="font-bold text-slate-800 mb-2">Connect App to CSV</h4>
                                    <p className="text-sm text-slate-600 mb-2">
-                                       Click the <span className="font-bold text-slate-800">Connect DB</span> button above and select your <code className="bg-slate-100 px-1 rounded">BartenderData.csv</code> file.
+                                       Click the <span className="font-bold text-slate-800">Connect DB</span> button above and select your <code className="bg-slate-100 px-1 rounded">packing.csv</code> file.
                                    </p>
                                    <p className="text-xs text-slate-500 italic">This allows the web app to write data directly to your computer.</p>
                                </div>
@@ -768,7 +763,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                        <li>Open your label in BarTender Designer.</li>
                                        <li>Go to <strong>File > Database Connection Setup</strong>.</li>
                                        <li>Select <strong>Text File</strong> (Do NOT select Excel).</li>
-                                       <li>Point to the same <code className="bg-slate-100 px-1 rounded">BartenderData.csv</code> file.</li>
+                                       <li>Point to the same <code className="bg-slate-100 px-1 rounded">packing.csv</code> file.</li>
                                        <li>Finish the wizard and drag fields onto your label.</li>
                                    </ul>
                                </div>
@@ -784,7 +779,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                        <li>Open <strong>BarTender Integration Builder</strong>.</li>
                                        <li>Create a new <strong>File Integration</strong>.</li>
                                        <li><strong>Folder to Scan:</strong> The folder containing your CSV.</li>
-                                       <li><strong>File Pattern:</strong> <code className="bg-slate-100 px-1 rounded">*.csv</code> or <code className="bg-slate-100 px-1 rounded">BartenderData.csv</code>.</li>
+                                       <li><strong>File Pattern:</strong> <code className="bg-slate-100 px-1 rounded">*.csv</code> or <code className="bg-slate-100 px-1 rounded">packing.csv</code>.</li>
                                        <li><strong>Action:</strong> Print Document (Select your label file).</li>
                                        <li>Deploy the integration.</li>
                                    </ul>
