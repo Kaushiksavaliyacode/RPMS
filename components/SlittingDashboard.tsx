@@ -1,8 +1,7 @@
 
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { JobCard, SlittingEntry, JobStatus } from '../types';
-import { Search, Scissors, Save, ArrowLeft, Plus, Trash2, CloudLightning, Printer, CheckSquare, Square, Plug, PlugZap, Settings, X, FileText, HelpCircle, RefreshCw, Zap, Eraser, AlertTriangle } from 'lucide-react';
+import { Search, Scissors, Save, ArrowLeft, Plus, Trash2, CloudLightning, Printer, CheckSquare, Square, Plug, PlugZap, Settings, X, FileText, HelpCircle, RefreshCw, Zap, Eraser, AlertTriangle, ExternalLink } from 'lucide-react';
 import { openLocalFile, writeToLocalFile, isFileSystemSupported, getSavedFileHandle, verifyPermission, clearLocalFile } from '../services/fileSystem';
 
 interface SlittingDashboardProps {
@@ -20,6 +19,52 @@ interface GridRow {
 
 // State structure: Keyed by Coil ID -> Array of Rows
 type CoilGridState = Record<string, GridRow[]>;
+
+// --- BACKUP WEB LABEL VIEW ---
+const LabelPrintView = ({ labels }: { labels: any[] }) => {
+    return (
+        <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-0 m-0">
+            {labels.map((label, index) => (
+                <div key={index} className="label-page border-2 border-black">
+                    <div className="flex justify-between items-start border-b-2 border-black pb-1 mb-1">
+                        <h1 className="text-xl font-black uppercase tracking-tight truncate w-2/3">{label.party}</h1>
+                        <div className="text-right">
+                             <span className="block text-[10px] font-bold uppercase">Job No</span>
+                             <span className="block text-lg font-black leading-none">{label.jobNo}</span>
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
+                         <div className="border border-black p-1">
+                             <span className="text-[9px] font-bold uppercase block">Size</span>
+                             <span className="text-xl font-black">{label.size} <span className="text-sm">mm</span></span>
+                         </div>
+                         <div className="border border-black p-1">
+                             <span className="text-[9px] font-bold uppercase block">Micron</span>
+                             <span className="text-xl font-black">{label.micron} <span className="text-sm">µ</span></span>
+                         </div>
+                         <div className="border border-black p-1">
+                             <span className="text-[9px] font-bold uppercase block">Gross Wt</span>
+                             <span className="text-xl font-black">{label.gross} <span className="text-sm">kg</span></span>
+                         </div>
+                         <div className="border border-black p-1">
+                             <span className="text-[9px] font-bold uppercase block">Net Wt</span>
+                             <span className="text-xl font-black">{label.net} <span className="text-sm">kg</span></span>
+                         </div>
+                    </div>
+
+                    <div className="flex justify-between items-end mt-2">
+                        <div className="text-[10px] font-bold">{label.date}</div>
+                        <div className="text-right">
+                            <span className="text-[10px] font-bold uppercase block">Roll No</span>
+                            <span className="text-2xl font-black leading-none">{label.srNo}</span>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
 
 const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob }) => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -132,14 +177,12 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       setCoilGrids({});
   }
 
-  // --- GENERATE CSV CONTENT ---
+  // --- GENERATE DATA HELPERS ---
   const generateCSV = (grids: CoilGridState, specificIds?: Set<string>) => {
       if (!selectedJob) return "";
       const cols = appConfig.columnNames;
       let csvContent = "";
       
-      // Header - Only if overwriting or file is empty (controlled by appConfig logic mostly)
-      // If appending, headers might be redundant, but user config controls it.
       if (appConfig.includeHeaders) {
           csvContent += `${cols.srNo},${cols.date},${cols.size},${cols.meter},${cols.micron},${cols.gross},${cols.core},${cols.net},${cols.party}\r\n`;
       }
@@ -149,7 +192,6 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
           if (!coilDef) return;
 
           (rows as GridRow[]).forEach(row => {
-              // If specificIds is provided, only include those. Otherwise include all valid data (for sync)
               const compositeId = `${coilId}_${row.id}`;
               const shouldInclude = specificIds ? specificIds.has(compositeId) : (row.gross && row.gross !== '0');
 
@@ -169,8 +211,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                       if (saved) dateStr = saved.timestamp.split(',')[0];
                   }
 
-                  // Party Name mapped to Job Code
-                  const partyName = selectedJob.jobCode;
+                  const partyName = selectedJob.jobCode; // Using Job Code as Party Name per user request
 
                   const csvRow = `${row.srNo},"${dateStr}",${coilDef.size},${meter.toFixed(0)},${selectedJob.micron},${gross.toFixed(3)},${core.toFixed(3)},${net.toFixed(3)},"${partyName}"`;
                   csvContent += csvRow + "\r\n";
@@ -180,21 +221,59 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       return csvContent;
   };
 
-  // --- SYNC TO LOCAL FILE ---
+  const getLabelsForWebPrint = () => {
+      if (!selectedJob) return [];
+      const labels: any[] = [];
+      
+      Object.entries(coilGrids).forEach(([coilId, rows]) => {
+          const coilDef = selectedJob.coils.find(c => c.id === coilId);
+          if (!coilDef) return;
+
+          (rows as GridRow[]).forEach(row => {
+               const compositeId = `${coilId}_${row.id}`;
+               if (selectedForPrint.has(compositeId)) {
+                   const gross = parseFloat(row.gross) || 0;
+                   const core = parseFloat(row.core) || 0;
+                   const net = gross - core;
+                   
+                   labels.push({
+                       party: selectedJob.jobCode,
+                       jobNo: selectedJob.srNo,
+                       size: coilDef.size,
+                       micron: selectedJob.micron,
+                       gross: gross.toFixed(3),
+                       net: net.toFixed(3),
+                       srNo: row.srNo,
+                       date: new Date().toLocaleDateString()
+                   });
+               }
+          });
+      });
+      return labels;
+  };
+
+  // --- ACTIONS ---
+
+  const handleWebPrint = () => {
+      if (selectedForPrint.size === 0) {
+          alert("Please select rolls to print.");
+          return;
+      }
+      window.print();
+  }
+
   const syncToLocalFile = async (grids: CoilGridState) => {
       if (!fileHandle || !appConfig.autoSync) return;
-      
       try {
-          const content = generateCSV(grids); // All valid rows
+          const content = generateCSV(grids);
           if (isPermissionGranted) {
-               await writeToLocalFile(fileHandle, content, false); // Overwrite for auto-sync
+               await writeToLocalFile(fileHandle, content, false);
           }
       } catch (e) {
           console.warn("Auto-sync failed", e);
       }
   };
 
-  // --- AUTO SAVE TO FIREBASE & FILE ---
   const triggerAutoSave = useCallback((newGrids: CoilGridState) => {
     if (!selectedJob) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -202,7 +281,6 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
     setIsSaving(true);
 
     saveTimeoutRef.current = setTimeout(() => {
-        // 1. Firebase Save
         const formatted = getFormattedData(newGrids);
         const currentIsComplete = selectedJob.slittingStatus === 'Completed';
         const newStatus = currentIsComplete ? 'Completed' : (formatted.length > 0 ? 'Running' : 'Pending');
@@ -213,7 +291,6 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
             slittingStatus: newStatus 
         });
         
-        // 2. Local File Auto-Sync (if enabled)
         if (appConfig.autoSync) {
             syncToLocalFile(newGrids);
         }
@@ -305,7 +382,6 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       }
   };
 
-  // --- LABEL PRINTING (Manual Trigger) ---
   const handlePrintLabels = async () => {
       if (!selectedJob || selectedForPrint.size === 0) {
           alert("Please select rows to print first.");
@@ -464,8 +540,11 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-5rem)] relative bg-slate-50 font-sans">
+       
+       <LabelPrintView labels={getLabelsForWebPrint()} />
+
        {/* Sidebar */}
-       <div className={`w-full lg:w-80 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden shrink-0 h-full lg:flex ${mobileView === 'detail' ? 'hidden' : 'flex'}`}>
+       <div className={`w-full lg:w-80 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden shrink-0 h-full lg:flex ${mobileView === 'detail' ? 'hidden' : 'flex'} no-print`}>
         <div className="p-4 border-b border-slate-100 bg-white sticky top-0 z-10">
           <h2 className="font-bold text-slate-800 mb-3 text-lg">Slitting Jobs</h2>
           <div className="relative">
@@ -515,7 +594,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       </div>
 
       {/* Main Detail Area */}
-      <div className={`flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden relative ${mobileView === 'list' ? 'hidden' : 'flex'}`}>
+      <div className={`flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden relative ${mobileView === 'list' ? 'hidden' : 'flex'} no-print`}>
         {selectedJob ? (
           <>
              {/* HEADER */}
@@ -570,6 +649,17 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                     : "Connect DB"}
                             </button>
                         )}
+                        
+                        {/* Backup Web Print */}
+                        {selectedForPrint.size > 0 && (
+                            <button
+                                onClick={handleWebPrint}
+                                className="flex items-center gap-2 bg-white text-slate-700 border border-slate-300 px-4 py-2 rounded-lg font-bold hover:bg-slate-50 transition-all uppercase text-xs tracking-wider"
+                            >
+                                <ExternalLink size={14} />
+                                Quick Print (Web)
+                            </button>
+                        )}
 
                         {selectedForPrint.size > 0 && (
                             <button
@@ -577,7 +667,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                 className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-slate-900 transition-all uppercase text-xs tracking-wider"
                             >
                                 <Printer size={14} />
-                                Print {selectedForPrint.size}
+                                Save & Print ({selectedForPrint.size})
                             </button>
                         )}
 
@@ -782,21 +872,15 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                </div>
                            </div>
 
-                           {/* Step 3 */}
-                           <div className="flex gap-4">
-                               <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0">3</div>
-                               <div>
-                                   <h4 className="font-bold text-slate-800 mb-2">Set up Auto-Print (Integration Builder)</h4>
-                                   <p className="text-sm text-slate-600 mb-2">To print automatically when you click 'Print' in this app:</p>
-                                   <ul className="text-sm text-slate-600 list-disc pl-4 space-y-1">
-                                       <li>Open <strong>BarTender Integration Builder</strong>.</li>
-                                       <li>Create a new <strong>File Integration</strong>.</li>
-                                       <li><strong>Folder to Scan:</strong> The folder containing your CSV.</li>
-                                       <li><strong>File Pattern:</strong> <code className="bg-slate-100 px-1 rounded">*.csv</code> or <code className="bg-slate-100 px-1 rounded">packing.csv</code>.</li>
-                                       <li><strong>Action:</strong> Print Document (Select your label file).</li>
-                                       <li>Deploy the integration.</li>
-                                   </ul>
-                               </div>
+                           {/* Troubleshooting */}
+                           <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                               <h4 className="font-bold text-amber-800 mb-2 flex items-center gap-2"><AlertTriangle size={18}/> Troubleshooting: "Data Saves but Labels Don't Print"</h4>
+                               <ul className="text-sm text-amber-700 list-disc pl-4 space-y-2">
+                                   <li><strong>Check Integration Service:</strong> Open <em>BarTender Administration Console</em>. Go to "Windows Services" tab. Ensure the "BarTender Integration Service" is <span className="font-bold text-green-600 bg-white px-1 rounded">Running</span>.</li>
+                                   <li><strong>Check Integration State:</strong> Open <em>Integration Builder</em>. Make sure your specific integration is started (Green Play button).</li>
+                                   <li><strong>Check Errors:</strong> Look at the "History" tab in Integration Builder. It will tell you if it tried to print and failed (e.g., "Printer not found" or "Database locked").</li>
+                                   <li><strong>Web Backup:</strong> If BarTender fails, use the <span className="font-bold">Quick Print (Web)</span> button to print directly from this browser as an emergency backup.</li>
+                               </ul>
                            </div>
                        </div>
 

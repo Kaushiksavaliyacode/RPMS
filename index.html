@@ -39,7 +39,25 @@
         .no-print { display: none !important; }
         .print-only { display: block !important; }
         body { background-color: white !important; }
-        .page-break { page-break-before: always; }
+        
+        /* Thermal Label Settings (100mm x 50mm) */
+        @page {
+          size: 100mm 50mm;
+          margin: 0;
+        }
+        
+        .label-page {
+          width: 100mm;
+          height: 49mm; /* Slightly less to avoid spillover */
+          page-break-after: always;
+          overflow: hidden;
+          padding: 3mm;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+        }
+        
         * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       }
       
