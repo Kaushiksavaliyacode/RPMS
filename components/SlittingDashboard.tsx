@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { JobCard, SlittingEntry, JobStatus } from '../types';
-import { Search, Scissors, Save, ArrowLeft, Plus, Trash2, CloudLightning, Printer, CheckSquare, Square, Plug, PlugZap, Settings, X, FileText, HelpCircle, RefreshCw, Zap } from 'lucide-react';
-import { openLocalFile, writeToLocalFile, isFileSystemSupported, getSavedFileHandle, verifyPermission } from '../services/fileSystem';
+import { Search, Scissors, Save, ArrowLeft, Plus, Trash2, CloudLightning, Printer, CheckSquare, Square, Plug, PlugZap, Settings, X, FileText, HelpCircle, RefreshCw, Zap, Eraser, AlertTriangle } from 'lucide-react';
+import { openLocalFile, writeToLocalFile, isFileSystemSupported, getSavedFileHandle, verifyPermission, clearLocalFile } from '../services/fileSystem';
 
 interface SlittingDashboardProps {
   jobs: JobCard[];
@@ -36,7 +36,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
   
   // App Config State
   const [appConfig, setAppConfig] = useState({
-      append: true,
+      append: false, // Default to false for BarTender stability
       includeHeaders: true,
       autoSync: false, 
       columnNames: {
@@ -138,7 +138,8 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       const cols = appConfig.columnNames;
       let csvContent = "";
       
-      // Header - Exact Order: Roll No, Date, Size, Meter, Micron, Gross, Core, Net, Party
+      // Header - Only if overwriting or file is empty (controlled by appConfig logic mostly)
+      // If appending, headers might be redundant, but user config controls it.
       if (appConfig.includeHeaders) {
           csvContent += `${cols.srNo},${cols.date},${cols.size},${cols.meter},${cols.micron},${cols.gross},${cols.core},${cols.net},${cols.party}\r\n`;
       }
@@ -290,6 +291,18 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       console.error("File connection failed:", error);
       alert("Connection failed. Please try again.");
     }
+  };
+
+  const handleClearFile = async () => {
+      if (!fileHandle) return;
+      if (!confirm("Are you sure? This will delete ALL content in your CSV file.")) return;
+      try {
+          await clearLocalFile(fileHandle);
+          alert("File cleared successfully.");
+      } catch (e) {
+          console.error("Clear failed", e);
+          alert("Failed to clear file. Check permission.");
+      }
   };
 
   // --- LABEL PRINTING (Manual Trigger) ---
@@ -835,7 +848,23 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                   <p className="text-xs text-slate-500">Add to end of file (For History/Packing Lists)</p>
                               </div>
                           </label>
-                          <p className="text-[10px] text-amber-600 mt-2 italic bg-amber-50 p-1 rounded">Note: Live Sync disables Append Mode to prevent duplicates.</p>
+                          <p className="text-[10px] text-slate-500 mt-2 italic bg-white/50 p-2 rounded border border-blue-100">
+                             <strong>Recommendation:</strong> Turn OFF for BarTender Automation so it only prints new labels.
+                          </p>
+                      </div>
+                      
+                      {/* Clear File Option */}
+                      <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
+                          <h4 className="text-xs font-bold text-red-800 uppercase mb-3 flex items-center gap-2">
+                              <AlertTriangle size={14}/> Danger Zone
+                          </h4>
+                           <button 
+                              onClick={handleClearFile}
+                              className="w-full bg-white border border-red-200 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2"
+                          >
+                              <Eraser size={14} /> Clear File Content
+                          </button>
+                          <p className="text-[10px] text-red-400 mt-2 text-center">Use this if your file has empty rows or corruption.</p>
                       </div>
 
                       <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">CSV Headers</h4>

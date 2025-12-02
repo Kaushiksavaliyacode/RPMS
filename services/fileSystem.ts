@@ -88,6 +88,17 @@ export const openLocalFile = async () => {
   return handle;
 };
 
+// Clear file content (Truncate)
+export const clearLocalFile = async (fileHandle: any) => {
+    if (!fileHandle) throw new Error('No file handle');
+    const hasPermission = await verifyPermission(fileHandle, true);
+    if (!hasPermission) throw new Error('Permission denied');
+
+    const writable = await fileHandle.createWritable(); // Default keepExistingData: false
+    await writable.truncate(0);
+    await writable.close();
+};
+
 // Write content to the file with Retry Logic
 export const writeToLocalFile = async (fileHandle: any, content: string, append: boolean = false) => {
   if (!fileHandle) throw new Error('No file handle provided');
@@ -101,11 +112,14 @@ export const writeToLocalFile = async (fileHandle: any, content: string, append:
   // Simple retry mechanism for file locks (common with Excel/BarTender)
   for (let i = 0; i < 3; i++) {
     try {
+        // If append is false, keepExistingData false will clear the file before writing
         const writable = await fileHandle.createWritable({ keepExistingData: append });
+        
         if (append) {
             const file = await fileHandle.getFile();
             await writable.seek(file.size);
         }
+        
         await writable.write(content);
         await writable.close();
         return; // Success
