@@ -23,6 +23,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'list' | 'detail'>('list');
   const [isSaving, setIsSaving] = useState(false);
+  const [sidebarSearch, setSidebarSearch] = useState('');
   
   // Separate grid data for each coil
   const [coilGrids, setCoilGrids] = useState<CoilGridState>({});
@@ -237,6 +238,17 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
 
   const isSlitComplete = selectedJob?.slittingStatus === 'Completed';
   const targetRollLength = selectedJob ? (selectedJob.perRollMeter / 2) : 0;
+  
+  // Filter jobs for sidebar
+  const filteredJobs = jobs.filter(j => {
+      const term = sidebarSearch.toLowerCase();
+      return (
+          j.srNo.toLowerCase().includes(term) ||
+          j.jobCode.toLowerCase().includes(term) ||
+          j.size.toString().includes(term) ||
+          j.coils.some(c => c.size.toString().includes(term))
+      );
+  });
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-5rem)] relative bg-slate-50 font-sans">
@@ -248,39 +260,45 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
               type="text"
-              placeholder="Search Job No..."
+              placeholder="Search No, Code, Size..."
+              value={sidebarSearch}
+              onChange={(e) => setSidebarSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
             />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto p-2 space-y-2 bg-slate-50/50">
-          {jobs.map(job => (
-            <div
-              key={job.id}
-              onClick={() => handleJobSelect(job.id)}
-              className={`p-4 rounded-xl cursor-pointer border transition-all duration-200 ${
-                selectedJobId === job.id
-                  ? 'bg-white border-blue-500 shadow-md ring-1 ring-blue-500 relative z-10'
-                  : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-sm'
-              }`}
-            >
-               <div className="flex justify-between items-center mb-2">
-                   <span className="text-lg font-black text-slate-800 block">#{job.srNo}</span>
-                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
-                       job.slittingStatus === 'Running' ? 'bg-blue-50 text-blue-600 border-blue-100' : 
-                       job.slittingStatus === 'Completed' ? 'bg-blue-600 text-white border-blue-700 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100'
-                   }`}>
-                       {job.slittingStatus}
-                   </span>
-               </div>
-               <p className="text-xs font-bold text-slate-400 truncate uppercase tracking-wide mb-2">{job.jobCode}</p>
-               <div className="flex gap-1 mt-2 flex-wrap">
-                   {job.coils.map(c => (
-                       <span key={c.id} className="text-[10px] border border-slate-100 px-1.5 py-0.5 rounded bg-slate-50 text-slate-600 font-bold">{c.size}mm</span>
-                   ))}
-               </div>
-            </div>
-          ))}
+          {filteredJobs.length === 0 ? (
+              <div className="text-center py-4 text-slate-400 text-xs font-medium">No jobs match your search</div>
+          ) : (
+            filteredJobs.map(job => (
+                <div
+                key={job.id}
+                onClick={() => handleJobSelect(job.id)}
+                className={`p-4 rounded-xl cursor-pointer border transition-all duration-200 ${
+                    selectedJobId === job.id
+                    ? 'bg-white border-blue-500 shadow-md ring-1 ring-blue-500 relative z-10'
+                    : 'bg-white border-slate-100 hover:border-blue-300 hover:shadow-sm'
+                }`}
+                >
+                <div className="flex justify-between items-center mb-2">
+                    <span className="text-lg font-black text-slate-800 block">#{job.srNo}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
+                        job.slittingStatus === 'Running' ? 'bg-blue-50 text-blue-600 border-blue-100' : 
+                        job.slittingStatus === 'Completed' ? 'bg-blue-600 text-white border-blue-700 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100'
+                    }`}>
+                        {job.slittingStatus}
+                    </span>
+                </div>
+                <p className="text-xs font-bold text-slate-400 truncate uppercase tracking-wide mb-2">{job.jobCode}</p>
+                <div className="flex gap-1 mt-2 flex-wrap">
+                    {job.coils.map(c => (
+                        <span key={c.id} className="text-[10px] border border-slate-100 px-1.5 py-0.5 rounded bg-slate-50 text-slate-600 font-bold">{c.size}mm</span>
+                    ))}
+                </div>
+                </div>
+            ))
+          )}
         </div>
       </div>
 

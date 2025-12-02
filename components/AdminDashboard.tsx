@@ -44,10 +44,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
       window.print();
   }
 
-  const filteredJobs = jobs.filter(j => 
-    j.srNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    j.jobCode.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredJobs = jobs.filter(j => {
+    const term = searchTerm.toLowerCase();
+    return (
+      j.srNo.toLowerCase().includes(term) ||
+      j.jobCode.toLowerCase().includes(term) ||
+      j.size.toString().includes(term) ||
+      j.coils.some(c => c.size.toString().includes(term))
+    );
+  });
 
   // --- Advanced Analytics Calculation ---
   const analytics = useMemo(() => {
@@ -241,7 +246,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search Job No, Code, Size..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs font-medium focus:ring-1 focus:ring-slate-900 outline-none"
@@ -535,7 +540,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ jobs, onCreateJob, onUp
             )})
         ) : (
             <div className="text-center py-12">
-                <p className="text-slate-400 text-sm font-medium">No jobs found. Create one to get started.</p>
+                <p className="text-slate-400 text-sm font-medium">No matching jobs found.</p>
             </div>
         )}
       </div>

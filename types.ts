@@ -47,6 +47,10 @@ export interface JobCard {
   productionStatus: JobStatus;
   slittingStatus: JobStatus;
 
+  // Timestamps
+  productionStartTime?: number;
+  productionEndTime?: number;
+
   productionData: ProductionEntry[];
   slittingData: SlittingEntry[];
   createdAt: number;
