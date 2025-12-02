@@ -88,27 +88,40 @@ export const openLocalFile = async () => {
   return handle;
 };
 
-// Write content to the file
+// Write content to the file with Retry Logic
 export const writeToLocalFile = async (fileHandle: any, content: string, append: boolean = false) => {
   if (!fileHandle) throw new Error('No file handle provided');
 
-  // Verify permission before writing. 
-  // If this fails (user denies), the promise rejects.
+  // Verify permission
   const hasPermission = await verifyPermission(fileHandle, true);
   if (!hasPermission) throw new Error('Permission denied');
 
-  // Create a writable stream to the file
-  const writable = await fileHandle.createWritable({ keepExistingData: append });
-  
-  if (append) {
-    // Move cursor to the end of the file
-    const file = await fileHandle.getFile();
-    await writable.seek(file.size);
+  let lastError;
+
+  // Simple retry mechanism for file locks (common with Excel/BarTender)
+  for (let i = 0; i < 3; i++) {
+    try {
+        const writable = await fileHandle.createWritable({ keepExistingData: append });
+        if (append) {
+            const file = await fileHandle.getFile();
+            await writable.seek(file.size);
+        }
+        await writable.write(content);
+        await writable.close();
+        return; // Success
+    } catch (e: any) {
+        console.warn(`Write attempt ${i+1} failed:`, e);
+        lastError = e;
+        
+        // If permission denied, don't retry, just fail
+        if (e.name === 'NotAllowedError' || e.name === 'SecurityError') {
+             throw e;
+        }
+
+        // Wait before retry (exponential backoff: 200, 400, 800)
+        await new Promise(resolve => setTimeout(resolve, 200 * Math.pow(2, i)));
+    }
   }
-  
-  // Write the contents
-  await writable.write(content);
-  
-  // Close the file
-  await writable.close();
+
+  throw lastError || new Error("Failed to write to file after multiple attempts. Is it open in Excel?");
 };

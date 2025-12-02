@@ -314,7 +314,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
              } else if (e.message && e.message.includes("lock")) {
                  alert("FILE LOCKED: Please close packing.csv in Excel!");
              } else {
-                 alert("Write failed. Please close the file in Excel.");
+                 alert("Write failed. Please close the file in Excel and try again.");
              }
           }
       } else {
@@ -761,7 +761,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                    <h4 className="font-bold text-slate-800 mb-2">Configure BarTender Label</h4>
                                    <ul className="text-sm text-slate-600 list-disc pl-4 space-y-1">
                                        <li>Open your label in BarTender Designer.</li>
-                                       <li>Go to <strong>File > Database Connection Setup</strong>.</li>
+                                       <li>Go to <strong>File &gt; Database Connection Setup</strong>.</li>
                                        <li>Select <strong>Text File</strong> (Do NOT select Excel).</li>
                                        <li>Point to the same <code className="bg-slate-100 px-1 rounded">packing.csv</code> file.</li>
                                        <li>Finish the wizard and drag fields onto your label.</li>
