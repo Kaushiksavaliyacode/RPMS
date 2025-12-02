@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { JobCard, SlittingEntry, JobStatus } from '../types';
-import { Search, Scissors, Save, ArrowLeft, Plus, Trash2, CloudLightning, Printer, CheckSquare, Square, Plug, PlugZap, Settings, X, FileText, HelpCircle, RefreshCw, Zap, Eraser, AlertTriangle, ExternalLink } from 'lucide-react';
+import { JobCard, SlittingEntry, JobStatus, AppSettings } from '../types';
+import { Search, Scissors, Save, ArrowLeft, Plus, Trash2, CloudLightning, Printer, CheckSquare, Square, Plug, PlugZap, Settings, X, FileText, HelpCircle, RefreshCw, Zap, Eraser, AlertTriangle, ExternalLink, Sheet } from 'lucide-react';
 import { openLocalFile, writeToLocalFile, isFileSystemSupported, getSavedFileHandle, verifyPermission, clearLocalFile } from '../services/fileSystem';
 
 interface SlittingDashboardProps {
@@ -20,44 +20,72 @@ interface GridRow {
 // State structure: Keyed by Coil ID -> Array of Rows
 type CoilGridState = Record<string, GridRow[]>;
 
-// --- BACKUP WEB LABEL VIEW ---
+// --- BACKUP WEB LABEL VIEW (100mm x 60mm) ---
 const LabelPrintView = ({ labels }: { labels: any[] }) => {
     return (
         <div className="hidden print:block fixed inset-0 bg-white z-[9999] p-0 m-0">
             {labels.map((label, index) => (
-                <div key={index} className="label-page border-2 border-black">
-                    <div className="flex justify-between items-start border-b-2 border-black pb-1 mb-1">
-                        <h1 className="text-xl font-black uppercase tracking-tight truncate w-2/3">{label.party}</h1>
+                <div key={index} className="label-page border-2 border-black flex flex-col justify-between">
+                    
+                    {/* Header: Party Name */}
+                    <div className="border-b-2 border-black pb-1">
+                        <div className="text-[10px] font-bold uppercase text-slate-500">Party Name</div>
+                        <h1 className="text-xl font-black uppercase tracking-tight leading-none overflow-hidden whitespace-nowrap text-ellipsis">{label.party}</h1>
+                    </div>
+
+                    {/* Sub Header: Job & Date */}
+                    <div className="flex justify-between border-b-2 border-black pb-1">
+                        <div>
+                             <span className="block text-[9px] font-bold uppercase">Job Code</span>
+                             <span className="block text-lg font-bold leading-none">{label.jobCode}</span>
+                        </div>
                         <div className="text-right">
-                             <span className="block text-[10px] font-bold uppercase">Job No</span>
-                             <span className="block text-lg font-black leading-none">{label.jobNo}</span>
+                             <span className="block text-[9px] font-bold uppercase">Date</span>
+                             <span className="block text-lg font-bold leading-none">{label.date}</span>
                         </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 mt-1">
-                         <div className="border border-black p-1">
+                    {/* Spec Grid */}
+                    <div className="grid grid-cols-3 gap-1 border-b-2 border-black pb-1">
+                         <div className="border border-black px-1">
                              <span className="text-[9px] font-bold uppercase block">Size</span>
-                             <span className="text-xl font-black">{label.size} <span className="text-sm">mm</span></span>
+                             <span className="text-lg font-black">{label.size}</span>
                          </div>
-                         <div className="border border-black p-1">
+                         <div className="border border-black px-1">
                              <span className="text-[9px] font-bold uppercase block">Micron</span>
-                             <span className="text-xl font-black">{label.micron} <span className="text-sm">µ</span></span>
+                             <span className="text-lg font-black">{label.micron}</span>
                          </div>
-                         <div className="border border-black p-1">
-                             <span className="text-[9px] font-bold uppercase block">Gross Wt</span>
-                             <span className="text-xl font-black">{label.gross} <span className="text-sm">kg</span></span>
-                         </div>
-                         <div className="border border-black p-1">
-                             <span className="text-[9px] font-bold uppercase block">Net Wt</span>
-                             <span className="text-xl font-black">{label.net} <span className="text-sm">kg</span></span>
+                         <div className="border border-black px-1">
+                             <span className="text-[9px] font-bold uppercase block">Meter</span>
+                             <span className="text-lg font-black">{label.meter}</span>
                          </div>
                     </div>
 
-                    <div className="flex justify-between items-end mt-2">
-                        <div className="text-[10px] font-bold">{label.date}</div>
+                    {/* Weight Grid */}
+                    <div className="grid grid-cols-3 gap-1 border-b-2 border-black pb-1">
+                         <div className="border border-black px-1">
+                             <span className="text-[9px] font-bold uppercase block">Gross</span>
+                             <span className="text-lg font-black">{label.gross}</span>
+                         </div>
+                         <div className="border border-black px-1">
+                             <span className="text-[9px] font-bold uppercase block">Core</span>
+                             <span className="text-lg font-black">{label.core}</span>
+                         </div>
+                         <div className="border border-black px-1 bg-black text-white">
+                             <span className="text-[9px] font-bold uppercase block text-slate-300">Net Wt</span>
+                             <span className="text-xl font-black">{label.net} <span className="text-xs">kg</span></span>
+                         </div>
+                    </div>
+
+                    {/* Footer: Roll No */}
+                    <div className="flex justify-between items-end">
+                        <div className="flex flex-col justify-end">
+                            <span className="text-[8px] font-bold uppercase">Job #{label.jobNo}</span>
+                            <span className="text-[8px] font-bold uppercase">Reliance Industries</span>
+                        </div>
                         <div className="text-right">
                             <span className="text-[10px] font-bold uppercase block">Roll No</span>
-                            <span className="text-2xl font-black leading-none">{label.srNo}</span>
+                            <span className="text-3xl font-black leading-none">{label.srNo}</span>
                         </div>
                     </div>
                 </div>
@@ -80,10 +108,11 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
   const [showHelp, setShowHelp] = useState(false);
   
   // App Config State
-  const [appConfig, setAppConfig] = useState({
-      append: false, // Default to false for BarTender stability
+  const [appConfig, setAppConfig] = useState<AppSettings>({
+      append: false, 
       includeHeaders: true,
       autoSync: false, 
+      googleSheetUrl: '',
       columnNames: {
           srNo: 'Roll No.',
           date: 'Date',
@@ -117,8 +146,6 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
             const savedHandle = await getSavedFileHandle();
             if (savedHandle) {
                 setFileHandle(savedHandle);
-                // We cannot check permission silently without user gesture in some browsers,
-                // but we know we have a handle. We wait for user interaction to verify.
                 setIsPermissionGranted(false); 
             }
         } catch (e) {
@@ -211,7 +238,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                       if (saved) dateStr = saved.timestamp.split(',')[0];
                   }
 
-                  const partyName = selectedJob.jobCode; // Using Job Code as Party Name per user request
+                  const partyName = selectedJob.partyName || selectedJob.jobCode; 
 
                   const csvRow = `${row.srNo},"${dateStr}",${coilDef.size},${meter.toFixed(0)},${selectedJob.micron},${gross.toFixed(3)},${core.toFixed(3)},${net.toFixed(3)},"${partyName}"`;
                   csvContent += csvRow + "\r\n";
@@ -236,12 +263,20 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                    const core = parseFloat(row.core) || 0;
                    const net = gross - core;
                    
+                   let meter = 0;
+                    if (selectedJob.micron > 0 && coilDef.size > 0) {
+                        meter = (net / selectedJob.micron / 0.00139 / coilDef.size) * 1000;
+                    }
+
                    labels.push({
-                       party: selectedJob.jobCode,
+                       party: selectedJob.partyName || selectedJob.jobCode,
+                       jobCode: selectedJob.jobCode,
                        jobNo: selectedJob.srNo,
                        size: coilDef.size,
                        micron: selectedJob.micron,
+                       meter: meter.toFixed(0),
                        gross: gross.toFixed(3),
+                       core: core.toFixed(3),
                        net: net.toFixed(3),
                        srNo: row.srNo,
                        date: new Date().toLocaleDateString()
@@ -254,10 +289,71 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
 
   // --- ACTIONS ---
 
+  const syncToGoogleSheet = async (grids: CoilGridState, specificIds: Set<string>) => {
+      if (!appConfig.googleSheetUrl) return;
+      if (!selectedJob) return;
+
+      const rollsToSync: any[] = [];
+      
+      Object.entries(grids).forEach(([coilId, rows]) => {
+          const coilDef = selectedJob.coils.find(c => c.id === coilId);
+          if (!coilDef) return;
+
+          (rows as GridRow[]).forEach(row => {
+              const compositeId = `${coilId}_${row.id}`;
+              if (specificIds.has(compositeId)) {
+                   const gross = parseFloat(row.gross) || 0;
+                   const core = parseFloat(row.core) || 0;
+                   const net = gross - core;
+                   let meter = 0;
+                   if (selectedJob.micron > 0 && coilDef.size > 0) {
+                        meter = (net / selectedJob.micron / 0.00139 / coilDef.size) * 1000;
+                   }
+                   
+                   rollsToSync.push({
+                       srNo: row.srNo,
+                       size: coilDef.size,
+                       meter: meter.toFixed(0),
+                       gross: gross.toFixed(3),
+                       core: core.toFixed(3),
+                       net: net.toFixed(3)
+                   });
+              }
+          });
+      });
+
+      if(rollsToSync.length === 0) return;
+
+      const payload = {
+          jobNo: selectedJob.srNo,
+          jobCode: selectedJob.jobCode,
+          partyName: selectedJob.partyName || selectedJob.jobCode,
+          micron: selectedJob.micron,
+          rolls: rollsToSync
+      };
+
+      try {
+          await fetch(appConfig.googleSheetUrl, {
+              method: 'POST',
+              mode: 'no-cors', // Important for Google Apps Script
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+          console.log("Sent to Google Sheet");
+      } catch (e) {
+          console.error("Google Sync Failed", e);
+          alert("Failed to sync to Google Sheet. Check URL.");
+      }
+  };
+
   const handleWebPrint = () => {
       if (selectedForPrint.size === 0) {
           alert("Please select rolls to print.");
           return;
+      }
+      // Trigger Google Sync if URL is present
+      if (appConfig.googleSheetUrl) {
+          syncToGoogleSheet(coilGrids, selectedForPrint);
       }
       window.print();
   }
@@ -388,34 +484,36 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
           return;
       }
 
-      const csvContent = generateCSV(coilGrids, selectedForPrint);
-      if (!csvContent) return;
+      // 1. Google Sync
+      if (appConfig.googleSheetUrl) {
+          syncToGoogleSheet(coilGrids, selectedForPrint);
+      }
 
-      if (fileHandle) {
+      // 2. Local CSV (BarTender)
+      const csvContent = generateCSV(coilGrids, selectedForPrint);
+      if (csvContent && fileHandle) {
           try {
              await writeToLocalFile(fileHandle, csvContent, appConfig.append);
-             alert(`Data written to packing.csv`);
+             alert(`Data written to packing.csv & Google Sheet`);
           } catch (e: any) {
              console.error("Write failed", e);
              if (e.name === 'NotAllowedError') {
-                 alert("Permission needed. Click 'Verify Connection' button.");
+                 alert("Permission needed for CSV. Click 'Verify Connection'.");
                  setIsPermissionGranted(false);
              } else if (e.message && e.message.includes("lock")) {
                  alert("FILE LOCKED: Please close packing.csv in Excel!");
-             } else {
-                 alert("Write failed. Please close the file in Excel and try again.");
              }
           }
       } else {
-          // Fallback Download
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-          const link = document.createElement("a");
-          const url = URL.createObjectURL(blob);
-          link.setAttribute("href", url);
-          link.setAttribute("download", `packing.csv`);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          // If no local file, maybe they just want Google Sheet or Direct Print
+          if(!appConfig.googleSheetUrl) {
+               // Fallback Download if NOTHING is connected
+               const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+               const link = document.createElement("a");
+               link.href = URL.createObjectURL(blob);
+               link.download = `packing.csv`;
+               link.click();
+          }
       }
   };
 
@@ -656,18 +754,8 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                 onClick={handleWebPrint}
                                 className="flex items-center gap-2 bg-white text-slate-700 border border-slate-300 px-4 py-2 rounded-lg font-bold hover:bg-slate-50 transition-all uppercase text-xs tracking-wider"
                             >
-                                <ExternalLink size={14} />
-                                Quick Print (Web)
-                            </button>
-                        )}
-
-                        {selectedForPrint.size > 0 && (
-                            <button
-                                onClick={handlePrintLabels}
-                                className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-slate-900 transition-all uppercase text-xs tracking-wider"
-                            >
                                 <Printer size={14} />
-                                Save & Print ({selectedForPrint.size})
+                                Print Labels ({selectedForPrint.size})
                             </button>
                         )}
 
@@ -836,8 +924,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
                    <div className="bg-emerald-600 p-6 text-white relative shrink-0">
-                       <h3 className="font-bold text-2xl mb-1">BarTender Connection Guide</h3>
-                       <p className="text-emerald-100 text-sm">Follow these steps to enable auto-printing.</p>
+                       <h3 className="font-bold text-2xl mb-1">Printing & Connection Guide</h3>
                        <button onClick={() => setShowHelp(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-1.5 rounded-full transition-colors">
                            <X size={20} />
                        </button>
@@ -849,11 +936,11 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                            <div className="flex gap-4">
                                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0">1</div>
                                <div>
-                                   <h4 className="font-bold text-slate-800 mb-2">Connect App to CSV</h4>
+                                   <h4 className="font-bold text-slate-800 mb-2">Google Sheets Auto-Sync</h4>
                                    <p className="text-sm text-slate-600 mb-2">
-                                       Click the <span className="font-bold text-slate-800">Connect DB</span> button above and select your <code className="bg-slate-100 px-1 rounded">packing.csv</code> file.
+                                       Go to <strong>Settings</strong> and paste your Google Web App URL.
                                    </p>
-                                   <p className="text-xs text-slate-500 italic">This allows the web app to write data directly to your computer.</p>
+                                   <p className="text-xs text-slate-500 italic">Data will be sent automatically when you click Print.</p>
                                </div>
                            </div>
 
@@ -861,29 +948,15 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                            <div className="flex gap-4">
                                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0">2</div>
                                <div>
-                                   <h4 className="font-bold text-slate-800 mb-2">Configure BarTender Label</h4>
+                                   <h4 className="font-bold text-slate-800 mb-2">Label Printing</h4>
                                    <ul className="text-sm text-slate-600 list-disc pl-4 space-y-1">
-                                       <li>Open your label in BarTender Designer.</li>
-                                       <li>Go to <strong>File &gt; Database Connection Setup</strong>.</li>
-                                       <li>Select <strong>Text File</strong> (Do NOT select Excel).</li>
-                                       <li>Point to the same <code className="bg-slate-100 px-1 rounded">packing.csv</code> file.</li>
-                                       <li>Finish the wizard and drag fields onto your label.</li>
+                                       <li>The layout is now set to <strong>100mm x 60mm</strong>.</li>
+                                       <li>Select rolls and click <strong>Print Labels</strong>.</li>
+                                       <li>This will open the browser print dialog. Select your thermal printer.</li>
                                    </ul>
                                </div>
                            </div>
-
-                           {/* Troubleshooting */}
-                           <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
-                               <h4 className="font-bold text-amber-800 mb-2 flex items-center gap-2"><AlertTriangle size={18}/> Troubleshooting: "Data Saves but Labels Don't Print"</h4>
-                               <ul className="text-sm text-amber-700 list-disc pl-4 space-y-2">
-                                   <li><strong>Check Integration Service:</strong> Open <em>BarTender Administration Console</em>. Go to "Windows Services" tab. Ensure the "BarTender Integration Service" is <span className="font-bold text-green-600 bg-white px-1 rounded">Running</span>.</li>
-                                   <li><strong>Check Integration State:</strong> Open <em>Integration Builder</em>. Make sure your specific integration is started (Green Play button).</li>
-                                   <li><strong>Check Errors:</strong> Look at the "History" tab in Integration Builder. It will tell you if it tried to print and failed (e.g., "Printer not found" or "Database locked").</li>
-                                   <li><strong>Web Backup:</strong> If BarTender fails, use the <span className="font-bold">Quick Print (Web)</span> button to print directly from this browser as an emergency backup.</li>
-                               </ul>
-                           </div>
                        </div>
-
                    </div>
               </div>
           </div>
@@ -903,55 +976,38 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                   </div>
                   <div className="p-6 overflow-y-auto max-h-[70vh]">
                       
-                      {/* Live Sync Option */}
+                      {/* Google Sheet URL */}
                       <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
                           <h4 className="text-xs font-bold text-emerald-800 uppercase mb-3 flex items-center gap-2">
-                              <Zap size={14} fill="currentColor"/> Live Sync
+                              <Sheet size={14} fill="currentColor"/> Google Sheet Connector
+                          </h4>
+                          <input 
+                              type="text"
+                              placeholder="https://script.google.com/macros/s/..."
+                              value={appConfig.googleSheetUrl || ''}
+                              onChange={(e) => setAppConfig({...appConfig, googleSheetUrl: e.target.value})}
+                              className="w-full p-2 border border-emerald-200 rounded text-sm text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none"
+                          />
+                          <p className="text-[10px] text-emerald-600 mt-2">Paste your Web App URL here to enable auto-saving to Sheets.</p>
+                      </div>
+
+                      {/* Live Sync Option */}
+                      <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                          <h4 className="text-xs font-bold text-blue-800 uppercase mb-3 flex items-center gap-2">
+                              <Zap size={14} fill="currentColor"/> Live Sync (Local File)
                           </h4>
                           <label className="flex items-center gap-3 cursor-pointer">
-                              <div className={`w-12 h-6 rounded-full p-1 transition-colors ${appConfig.autoSync ? 'bg-emerald-600' : 'bg-slate-300'}`} onClick={() => setAppConfig({...appConfig, autoSync: !appConfig.autoSync})}>
+                              <div className={`w-12 h-6 rounded-full p-1 transition-colors ${appConfig.autoSync ? 'bg-blue-600' : 'bg-slate-300'}`} onClick={() => setAppConfig({...appConfig, autoSync: !appConfig.autoSync})}>
                                   <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform ${appConfig.autoSync ? 'translate-x-6' : 'translate-x-0'}`}></div>
                               </div>
                               <div>
                                   <span className="text-sm font-bold text-slate-700">Auto-Update Excel</span>
-                                  <p className="text-xs text-slate-500">Updates file immediately while typing. (Overwrites file)</p>
+                                  <p className="text-xs text-slate-500">Updates local CSV immediately while typing.</p>
                               </div>
                           </label>
                       </div>
 
-                      <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
-                          <h4 className="text-xs font-bold text-blue-800 uppercase mb-3 flex items-center gap-2">
-                              <FileText size={14}/> File Mode
-                          </h4>
-                          <label className="flex items-center gap-3 cursor-pointer">
-                              <div className={`w-12 h-6 rounded-full p-1 transition-colors ${appConfig.append ? 'bg-blue-600' : 'bg-slate-300'}`} onClick={() => setAppConfig({...appConfig, append: !appConfig.append})}>
-                                  <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform ${appConfig.append ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                              </div>
-                              <div>
-                                  <span className="text-sm font-bold text-slate-700">Append Mode</span>
-                                  <p className="text-xs text-slate-500">Add to end of file (For History/Packing Lists)</p>
-                              </div>
-                          </label>
-                          <p className="text-[10px] text-slate-500 mt-2 italic bg-white/50 p-2 rounded border border-blue-100">
-                             <strong>Recommendation:</strong> Turn OFF for BarTender Automation so it only prints new labels.
-                          </p>
-                      </div>
-                      
-                      {/* Clear File Option */}
-                      <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
-                          <h4 className="text-xs font-bold text-red-800 uppercase mb-3 flex items-center gap-2">
-                              <AlertTriangle size={14}/> Danger Zone
-                          </h4>
-                           <button 
-                              onClick={handleClearFile}
-                              className="w-full bg-white border border-red-200 text-red-600 hover:bg-red-600 hover:text-white px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2"
-                          >
-                              <Eraser size={14} /> Clear File Content
-                          </button>
-                          <p className="text-[10px] text-red-400 mt-2 text-center">Use this if your file has empty rows or corruption.</p>
-                      </div>
-
-                      <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">CSV Headers</h4>
+                      <h4 className="text-xs font-bold text-slate-400 uppercase mb-3">CSV Headers (Local File)</h4>
                       <div className="grid grid-cols-2 gap-4">
                           {Object.entries(appConfig.columnNames).map(([key, value]) => (
                               <div key={key}>

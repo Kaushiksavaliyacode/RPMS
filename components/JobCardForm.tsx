@@ -8,10 +8,20 @@ interface JobCardFormProps {
   onSubmit: (job: JobCard) => void;
 }
 
+// Party Name Lookup Table
+const PARTY_LOOKUP: Record<string, string> = {
+    '001': 'Finetech Print World',
+    '006': 'Makers Polyshrink',
+    '002': 'Balaji Wafers',
+    '003': 'Gopal Namkeen',
+    '004': 'Real Paprika'
+};
+
 const JobCardForm: React.FC<JobCardFormProps> = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     srNo: '',
     jobCode: '',
+    partyName: '',
     size: '',
     totalQuantity: '',
     micron: '',
@@ -40,12 +50,24 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ onClose, onSubmit }) => {
     setCoils(coils.map(c => c.id === id ? { ...c, [field]: Number(value) } : c));
   };
 
+  const handleJobCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const code = e.target.value;
+      const lookup = PARTY_LOOKUP[code];
+      
+      setFormData(prev => ({
+          ...prev,
+          jobCode: code,
+          partyName: lookup || prev.partyName // Auto-fill if match, else keep existing
+      }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newJob: JobCard = {
       id: crypto.randomUUID(),
       srNo: formData.srNo,
       jobCode: formData.jobCode,
+      partyName: formData.partyName || formData.jobCode, // Fallback to Code if empty
       size: Number(formData.size),
       totalQuantity: Number(formData.totalQuantity),
       micron: Number(formData.micron),
@@ -85,38 +107,48 @@ const JobCardForm: React.FC<JobCardFormProps> = ({ onClose, onSubmit }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div className="md:col-span-3 bg-slate-50 p-4 rounded-xl border border-slate-100 mb-2">
                 <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">General Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Date</label>
-                    <input
-                        required
-                        type="date"
-                        value={formData.date}
-                        onChange={e => setFormData({ ...formData, date: e.target.value })}
-                        className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                    />
+                        <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Date</label>
+                        <input
+                            required
+                            type="date"
+                            value={formData.date}
+                            onChange={e => setFormData({ ...formData, date: e.target.value })}
+                            className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        />
                     </div>
                     <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Sr. No (Job Number) *</label>
-                    <input
-                        required
-                        type="text"
-                        placeholder="e.g. 1001"
-                        value={formData.srNo}
-                        onChange={e => setFormData({ ...formData, srNo: e.target.value })}
-                        className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                    />
+                        <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Sr. No (Job Number) *</label>
+                        <input
+                            required
+                            type="text"
+                            placeholder="e.g. 1001"
+                            value={formData.srNo}
+                            onChange={e => setFormData({ ...formData, srNo: e.target.value })}
+                            className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
+                        />
                     </div>
                     <div>
-                    <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Job Code *</label>
-                    <input
-                        required
-                        type="text"
-                        placeholder="e.g. REL-A-001"
-                        value={formData.jobCode}
-                        onChange={e => setFormData({ ...formData, jobCode: e.target.value })}
-                        className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
-                    />
+                        <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Job Code *</label>
+                        <input
+                            required
+                            type="text"
+                            placeholder="e.g. 001"
+                            value={formData.jobCode}
+                            onChange={handleJobCodeChange}
+                            className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Party Name</label>
+                        <input
+                            type="text"
+                            placeholder="e.g. Finetech"
+                            value={formData.partyName}
+                            onChange={e => setFormData({ ...formData, partyName: e.target.value })}
+                            className="w-full p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium bg-blue-50/50"
+                        />
                     </div>
                 </div>
             </div>

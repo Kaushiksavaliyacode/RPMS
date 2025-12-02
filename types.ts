@@ -34,6 +34,7 @@ export interface JobCard {
   id: string;
   srNo: string;
   jobCode: string;
+  partyName?: string; // Added Party Name
   size: number; 
   totalQuantity: number;
   micron: number;
@@ -59,4 +60,22 @@ export interface JobCard {
 export interface User {
   role: Department;
   isAuthenticated: boolean;
+}
+
+export interface AppSettings {
+    append: boolean;
+    includeHeaders: boolean;
+    autoSync: boolean;
+    googleSheetUrl?: string; // Added Google Sheet URL
+    columnNames: {
+        srNo: string;
+        date: string;
+        size: string;
+        meter: string;
+        micron: string;
+        gross: string;
+        core: string;
+        net: string;
+        party: string;
+    }
 }
