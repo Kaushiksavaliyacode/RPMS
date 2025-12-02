@@ -733,24 +733,65 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
         )}
       </div>
 
-      {/* TUTORIAL MODAL (Existing logic kept, just ensuring it's here) */}
+      {/* TUTORIAL MODAL */}
       {showHelp && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                   <div className="bg-emerald-600 p-6 text-white relative overflow-hidden">
-                       <h3 className="font-bold text-2xl mb-1">How to Connect Bartender</h3>
-                       <p className="text-emerald-100">Permanent Setup Guide</p>
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+                   <div className="bg-emerald-600 p-6 text-white relative shrink-0">
+                       <h3 className="font-bold text-2xl mb-1">BarTender Connection Guide</h3>
+                       <p className="text-emerald-100 text-sm">Follow these steps to enable auto-printing.</p>
                        <button onClick={() => setShowHelp(false)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/30 p-1.5 rounded-full transition-colors">
                            <X size={20} />
                        </button>
                    </div>
-                   <div className="p-8 space-y-8 overflow-y-auto max-h-[60vh]">
-                       <p className="text-slate-600">Once you connect the database, the app will <strong>remember it</strong>. You only need to click "Verify Connection" if you restart your browser.</p>
-                       <ul className="list-disc pl-5 space-y-2 text-slate-600">
-                           <li>Select <strong>Text File</strong> in Bartender Database Wizard.</li>
-                           <li>Use <strong>Append Mode</strong> (in Settings) to keep a history of all jobs in one file.</li>
-                           <li>Use <strong>Live Sync</strong> (in Settings) if you want the Excel file to update instantly as you type (Warning: Overwrites file).</li>
-                       </ul>
+                   <div className="p-8 overflow-y-auto">
+                       
+                       <div className="space-y-8">
+                           {/* Step 1 */}
+                           <div className="flex gap-4">
+                               <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0">1</div>
+                               <div>
+                                   <h4 className="font-bold text-slate-800 mb-2">Connect App to CSV</h4>
+                                   <p className="text-sm text-slate-600 mb-2">
+                                       Click the <span className="font-bold text-slate-800">Connect DB</span> button above and select your <code className="bg-slate-100 px-1 rounded">BartenderData.csv</code> file.
+                                   </p>
+                                   <p className="text-xs text-slate-500 italic">This allows the web app to write data directly to your computer.</p>
+                               </div>
+                           </div>
+
+                           {/* Step 2 */}
+                           <div className="flex gap-4">
+                               <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0">2</div>
+                               <div>
+                                   <h4 className="font-bold text-slate-800 mb-2">Configure BarTender Label</h4>
+                                   <ul className="text-sm text-slate-600 list-disc pl-4 space-y-1">
+                                       <li>Open your label in BarTender Designer.</li>
+                                       <li>Go to <strong>File > Database Connection Setup</strong>.</li>
+                                       <li>Select <strong>Text File</strong> (Do NOT select Excel).</li>
+                                       <li>Point to the same <code className="bg-slate-100 px-1 rounded">BartenderData.csv</code> file.</li>
+                                       <li>Finish the wizard and drag fields onto your label.</li>
+                                   </ul>
+                               </div>
+                           </div>
+
+                           {/* Step 3 */}
+                           <div className="flex gap-4">
+                               <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center shrink-0">3</div>
+                               <div>
+                                   <h4 className="font-bold text-slate-800 mb-2">Set up Auto-Print (Integration Builder)</h4>
+                                   <p className="text-sm text-slate-600 mb-2">To print automatically when you click 'Print' in this app:</p>
+                                   <ul className="text-sm text-slate-600 list-disc pl-4 space-y-1">
+                                       <li>Open <strong>BarTender Integration Builder</strong>.</li>
+                                       <li>Create a new <strong>File Integration</strong>.</li>
+                                       <li><strong>Folder to Scan:</strong> The folder containing your CSV.</li>
+                                       <li><strong>File Pattern:</strong> <code className="bg-slate-100 px-1 rounded">*.csv</code> or <code className="bg-slate-100 px-1 rounded">BartenderData.csv</code>.</li>
+                                       <li><strong>Action:</strong> Print Document (Select your label file).</li>
+                                       <li>Deploy the integration.</li>
+                                   </ul>
+                               </div>
+                           </div>
+                       </div>
+
                    </div>
               </div>
           </div>
