@@ -736,12 +736,12 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                    <div className="bg-black/40 rounded-lg p-4 mb-6 text-left">
                        <p className="text-xs font-bold text-slate-500 uppercase mb-2">Logs:</p>
                        <div className="font-mono text-sm text-green-400">
-                           > Server started...<br/>
-                           > Waiting for data...<br/>
+                           &gt; Server started...<br/>
+                           &gt; Waiting for data...<br/>
                            {incomingPrintJob && (
                                <>
-                               <span className="text-yellow-400">> Received job from {incomingPrintJob.sender}</span><br/>
-                               <span className="text-white">> Printing {incomingPrintJob.labels.length} labels...</span>
+                               <span className="text-yellow-400">&gt; Received job from {incomingPrintJob.sender}</span><br/>
+                               <span className="text-white">&gt; Printing {incomingPrintJob.labels.length} labels...</span>
                                </>
                            )}
                        </div>
