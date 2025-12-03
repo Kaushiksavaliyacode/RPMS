@@ -79,3 +79,10 @@ export interface AppSettings {
         party: string;
     }
 }
+
+export interface PrintJob {
+    id: string;
+    timestamp: number;
+    sender: string;
+    labels: any[]; // Array of label data
+}

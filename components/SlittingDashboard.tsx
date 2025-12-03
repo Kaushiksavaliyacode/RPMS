@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { JobCard, SlittingEntry, JobStatus, AppSettings } from '../types';
-import { Search, Scissors, Save, ArrowLeft, Plus, Trash2, CloudLightning, Printer, CheckSquare, Square, Plug, PlugZap, Settings, X, FileText, HelpCircle, RefreshCw, Zap, Eraser, AlertTriangle, ExternalLink, Sheet } from 'lucide-react';
+import { JobCard, SlittingEntry, JobStatus, AppSettings, PrintJob } from '../types';
+import { Search, Scissors, Save, ArrowLeft, Plus, Trash2, CloudLightning, Printer, CheckSquare, Square, Plug, PlugZap, Settings, X, FileText, HelpCircle, RefreshCw, Zap, Eraser, AlertTriangle, ExternalLink, Sheet, Radio, Wifi, TestTube } from 'lucide-react';
 import { openLocalFile, writeToLocalFile, isFileSystemSupported, getSavedFileHandle, verifyPermission, clearLocalFile } from '../services/fileSystem';
+import { addPrintJob, subscribeToPrintQueue, deletePrintJob } from '../services/storage';
 
 interface SlittingDashboardProps {
   jobs: JobCard[];
@@ -106,6 +107,9 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
   // Print Settings State
   const [showPrintSettings, setShowPrintSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [isPrintServerMode, setIsPrintServerMode] = useState(false);
+  const [incomingPrintJob, setIncomingPrintJob] = useState<PrintJob | null>(null);
+  const [isTestingPrinter, setIsTestingPrinter] = useState(false);
   
   // App Config State
   const [appConfig, setAppConfig] = useState<AppSettings>({
@@ -155,7 +159,33 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
     restoreHandle();
   }, []);
 
-  // 2. Load Grid Data when Job Selected
+  // 2. Print Server Listener
+  useEffect(() => {
+      if (!isPrintServerMode) return;
+
+      const unsubscribe = subscribeToPrintQueue((jobs) => {
+          if (jobs.length > 0) {
+              const job = jobs[0]; // Process first job
+              setIncomingPrintJob(job);
+              
+              // Trigger Print Dialog after small delay to allow render
+              setTimeout(() => {
+                  window.print();
+                  
+                  // Delete after print (simulate confirmation)
+                  // In real world, user might cancel print dialog, but we assume success
+                  // Or we leave it to user to click "Job Done"
+                  // For smooth flow: we delete it after 10s or wait for next.
+                  // Let's delete it immediately after triggering print dialog
+                  deletePrintJob(job.id);
+                  setIncomingPrintJob(null);
+              }, 1000);
+          }
+      });
+      return () => unsubscribe();
+  }, [isPrintServerMode]);
+
+  // 3. Load Grid Data when Job Selected
   useEffect(() => {
     if (selectedJob && !isTypingRef.current) {
       const newGrids: CoilGridState = {};
@@ -249,6 +279,28 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
   };
 
   const getLabelsForWebPrint = () => {
+      if (isPrintServerMode) {
+          if (isTestingPrinter) {
+              return [{
+                  party: "TEST PRINT INC.",
+                  jobCode: "TEST-01",
+                  jobNo: "9999",
+                  size: 500,
+                  micron: 50,
+                  meter: "1000",
+                  gross: "10.500",
+                  core: "0.500",
+                  net: "10.000",
+                  srNo: "T-1",
+                  date: new Date().toLocaleDateString()
+              }];
+          }
+          if (incomingPrintJob) {
+              return incomingPrintJob.labels;
+          }
+          return [];
+      }
+
       if (!selectedJob) return [];
       const labels: any[] = [];
       
@@ -288,6 +340,14 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
   };
 
   // --- ACTIONS ---
+
+  const handleTestPrint = () => {
+      setIsTestingPrinter(true);
+      setTimeout(() => {
+          window.print();
+          setIsTestingPrinter(false);
+      }, 500);
+  };
 
   const syncToGoogleSheet = async (grids: CoilGridState, specificIds: Set<string>) => {
       if (!appConfig.googleSheetUrl) return;
@@ -343,6 +403,22 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       } catch (e) {
           console.error("Google Sync Failed", e);
           alert("Failed to sync to Google Sheet. Check URL.");
+      }
+  };
+
+  const handleRemotePrint = async () => {
+      if (selectedForPrint.size === 0) {
+          alert("Select rolls first");
+          return;
+      }
+      const labels = getLabelsForWebPrint();
+      try {
+          await addPrintJob(labels, "Mobile User");
+          alert("Sent to Print Station!");
+          // Google Sync as well
+          if (appConfig.googleSheetUrl) syncToGoogleSheet(coilGrids, selectedForPrint);
+      } catch (e) {
+          alert("Failed to send print job.");
       }
   };
 
@@ -479,6 +555,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
   };
 
   const handlePrintLabels = async () => {
+      // Legacy CSV Print
       if (!selectedJob || selectedForPrint.size === 0) {
           alert("Please select rows to print first.");
           return;
@@ -505,9 +582,8 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
              }
           }
       } else {
-          // If no local file, maybe they just want Google Sheet or Direct Print
+          // Fallback Download
           if(!appConfig.googleSheetUrl) {
-               // Fallback Download if NOTHING is connected
                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                const link = document.createElement("a");
                link.href = URL.createObjectURL(blob);
@@ -636,6 +712,56 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
       );
   });
 
+  if (isPrintServerMode) {
+      return (
+          <div className="flex flex-col items-center justify-center min-h-[80vh] bg-slate-900 text-white rounded-xl relative overflow-hidden">
+               <LabelPrintView labels={getLabelsForWebPrint()} />
+               
+               <div className="absolute top-0 left-0 w-full h-2 bg-purple-500 animate-pulse"></div>
+               
+               <div className="bg-white/10 p-8 rounded-2xl backdrop-blur-sm border border-white/10 text-center max-w-md">
+                   <div className="bg-purple-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl shadow-purple-900/50">
+                       <Wifi size={40} className="animate-pulse" />
+                   </div>
+                   <h1 className="text-2xl font-black mb-2">Print Station Active</h1>
+                   <p className="text-slate-300 mb-6">This device is listening for print jobs from remote users.</p>
+                   
+                   <button 
+                       onClick={handleTestPrint}
+                       className="mb-4 bg-blue-600/80 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-bold uppercase tracking-wide flex items-center justify-center gap-2 mx-auto w-full transition-colors"
+                   >
+                       <TestTube size={16} /> Test Printer
+                   </button>
+                   
+                   <div className="bg-black/40 rounded-lg p-4 mb-6 text-left">
+                       <p className="text-xs font-bold text-slate-500 uppercase mb-2">Logs:</p>
+                       <div className="font-mono text-sm text-green-400">
+                           > Server started...<br/>
+                           > Waiting for data...<br/>
+                           {incomingPrintJob && (
+                               <>
+                               <span className="text-yellow-400">> Received job from {incomingPrintJob.sender}</span><br/>
+                               <span className="text-white">> Printing {incomingPrintJob.labels.length} labels...</span>
+                               </>
+                           )}
+                       </div>
+                   </div>
+
+                   <button 
+                       onClick={() => setIsPrintServerMode(false)}
+                       className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-all text-sm uppercase tracking-wide w-full"
+                   >
+                       Stop Server
+                   </button>
+                   
+                   <p className="mt-6 text-[10px] text-slate-400 max-w-xs mx-auto">
+                      <strong>Tip:</strong> Enable <code>--kiosk-printing</code> in your Chrome shortcut to skip the print dialog popup for full automation.
+                   </p>
+               </div>
+          </div>
+      )
+  }
+
   return (
     <div className="flex flex-col lg:flex-row gap-4 h-[calc(100dvh-5rem)] relative bg-slate-50 font-sans">
        
@@ -748,15 +874,22 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                             </button>
                         )}
                         
-                        {/* Backup Web Print */}
+                        {/* Remote Print / Web Print */}
                         {selectedForPrint.size > 0 && (
-                            <button
-                                onClick={handleWebPrint}
-                                className="flex items-center gap-2 bg-white text-slate-700 border border-slate-300 px-4 py-2 rounded-lg font-bold hover:bg-slate-50 transition-all uppercase text-xs tracking-wider"
-                            >
-                                <Printer size={14} />
-                                Print Labels ({selectedForPrint.size})
-                            </button>
+                             <div className="flex">
+                                <button
+                                    onClick={handleWebPrint}
+                                    className="flex items-center gap-2 bg-white text-slate-700 border border-slate-300 border-r-0 rounded-l-lg px-3 py-2 font-bold hover:bg-slate-50 transition-all uppercase text-xs tracking-wider"
+                                >
+                                    <Printer size={14} /> Local Print
+                                </button>
+                                <button 
+                                    onClick={handleRemotePrint}
+                                    className="flex items-center gap-2 bg-purple-600 text-white border border-purple-600 rounded-r-lg px-3 py-2 font-bold hover:bg-purple-700 transition-all uppercase text-xs tracking-wider"
+                                >
+                                    <Wifi size={14} /> Remote Print
+                                </button>
+                             </div>
                         )}
 
                         <button 
@@ -976,6 +1109,22 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                   </div>
                   <div className="p-6 overflow-y-auto max-h-[70vh]">
                       
+                      {/* PRINT STATION TOGGLE */}
+                      <div className="mb-6 p-4 bg-purple-50 border border-purple-100 rounded-xl">
+                          <h4 className="text-xs font-bold text-purple-800 uppercase mb-3 flex items-center gap-2">
+                              <Wifi size={14} fill="currentColor"/> Print Station
+                          </h4>
+                          <p className="text-xs text-slate-600 mb-4">
+                              Turn this computer into a Print Server to receive print jobs from other devices (e.g. Mobile).
+                          </p>
+                          <button 
+                              onClick={() => { setShowPrintSettings(false); setIsPrintServerMode(true); }}
+                              className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-sm uppercase tracking-wide transition-colors shadow-lg shadow-purple-200"
+                          >
+                              Open Print Server Mode
+                          </button>
+                      </div>
+
                       {/* Google Sheet URL */}
                       <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
                           <h4 className="text-xs font-bold text-emerald-800 uppercase mb-3 flex items-center gap-2">

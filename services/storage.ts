@@ -1,5 +1,5 @@
 
-import { JobCard } from '../types';
+import { JobCard, PrintJob } from '../types';
 import { db } from './firebase';
 import { 
   collection, 
@@ -77,4 +77,41 @@ export const clearDatabase = async () => {
   } catch (error) {
     console.error('Error clearing database:', error);
   }
+};
+
+// --- PRINT SERVER LOGIC ---
+
+export const addPrintJob = async (labels: any[], sender: string) => {
+    const job: PrintJob = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        sender,
+        labels
+    };
+    try {
+        await setDoc(doc(db, "print_queue", job.id), job);
+    } catch (error) {
+        console.error("Failed to send print job", error);
+        throw error;
+    }
+};
+
+export const subscribeToPrintQueue = (onJobReceived: (jobs: PrintJob[]) => void) => {
+    const q = query(collection(db, "print_queue")); // Get all pending jobs
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const jobs = snapshot.docs.map(doc => doc.data() as PrintJob);
+      // Sort in memory or use index if needed, but queue should be small
+      onJobReceived(jobs.sort((a,b) => a.timestamp - b.timestamp));
+    });
+  
+    return () => unsubscribe();
+};
+
+export const deletePrintJob = async (jobId: string) => {
+    try {
+        await deleteDoc(doc(db, "print_queue", jobId));
+    } catch (e) {
+        console.error("Failed to clear print job", e);
+    }
 };
