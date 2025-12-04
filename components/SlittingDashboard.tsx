@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { JobCard, SlittingEntry, JobStatus, AppSettings, PrintJob } from '../types';
 import { Search, Scissors, Save, ArrowLeft, Plus, Trash2, CloudLightning, Printer, CheckSquare, Square, Plug, PlugZap, Settings, X, FileText, HelpCircle, RefreshCw, Zap, Eraser, AlertTriangle, ExternalLink, Sheet, Radio, Wifi, TestTube } from 'lucide-react';
@@ -1083,7 +1082,7 @@ const SlittingDashboard: React.FC<SlittingDashboardProps> = ({ jobs, onUpdateJob
                                <div>
                                    <h4 className="font-bold text-slate-800 mb-2">Label Printing</h4>
                                    <ul className="text-sm text-slate-600 list-disc pl-4 space-y-1">
-                                       <li>The layout is now set to <strong>100mm x 60mm</strong>.</li>
+                                       <li>The layout is now set to <strong>4.098in x 2.559in</strong>.</li>
                                        <li>Select rolls and click <strong>Print Labels</strong>.</li>
                                        <li>This will open the browser print dialog. Select your thermal printer.</li>
                                    </ul>
